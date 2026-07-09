@@ -1,0 +1,29 @@
+{
+  "name": "@flancer32/alarisa",
+  "version": "0.1.0",
+  "description": "Private, human-controlled personal digital avatar runtime for one Principal.",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/flancer32/alarisa.git"
+  },
+  "homepage": "https://github.com/flancer32/alarisa",
+  "bugs": {
+    "url": "https://github.com/flancer32/alarisa/issues"
+  },
+  "keywords": [
+    "alarisa",
+    "assistant",
+    "avatar",
+    "orchestration",
+    "pwa",
+    "nodejs"
+  ],
+  "types": "types.d.ts",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
