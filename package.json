@@ -39,7 +39,8 @@
     "test": "npm run test:unit"
   },
   "dependencies": {
-    "@teqfw/di": "^2.6.2"
+    "@teqfw/di": "^2.6.2",
+    "@teqfw/log": "github:teqfw/log"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

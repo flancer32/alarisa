@@ -12,8 +12,13 @@
  */
 
 export default class Alarisa_Back_Bootstrap {
-  constructor() {
+  /**
+   * @param {object} deps
+   * @param {TeqFw_Log_Provider} deps.logger
+   */
+  constructor({ logger }) {
     let started = false;
+    const log = logger.forSource("Alarisa_Back_Bootstrap");
 
     /**
      * @param {Alarisa_Back_Bootstrap_Run_Params} params
@@ -21,8 +26,7 @@ export default class Alarisa_Back_Bootstrap {
      */
     this.run = async function ({ projectRoot, cliArgs = [] }) {
       started = true;
-      const suffix = cliArgs.length > 0 ? ` Args: ${cliArgs.join(" ")}` : "";
-      console.log(`Alarisa application started. Root: ${projectRoot ?? ""}${suffix}`.trim());
+      log.info("Application started", { projectRoot, cliArgs });
       return 0;
     };
 
@@ -31,6 +35,7 @@ export default class Alarisa_Back_Bootstrap {
      */
     this.stop = async function () {
       started = false;
+      log.info("Application stopped");
     };
 
     /**
@@ -41,3 +46,7 @@ export default class Alarisa_Back_Bootstrap {
     };
   }
 }
+
+export const __deps__ = Object.freeze({
+  logger: "TeqFw_Log_Provider$",
+});
