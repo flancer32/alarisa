@@ -1,6 +1,6 @@
 {
   "name": "@flancer32/alarisa",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Private, human-controlled personal digital avatar runtime for one Principal.",
   "type": "module",
   "repository": {
@@ -17,13 +17,32 @@
     "avatar",
     "orchestration",
     "pwa",
-    "nodejs"
+    "nodejs",
+    "teqfw"
   ],
   "types": "types.d.ts",
   "engines": {
     "node": ">=20"
   },
+  "teqfw": {
+    "namespaces": [
+      {
+        "prefix": "Alarisa_",
+        "path": "./src",
+        "ext": ".mjs"
+      }
+    ]
+  },
   "scripts": {
-    "test": "node --test"
+    "start": "node ./bin/cli.mjs",
+    "test:unit": "find test/unit -name '*.test.mjs' -print0 | xargs -0 node --test",
+    "test": "npm run test:unit"
+  },
+  "dependencies": {
+    "@teqfw/di": "^2.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2"
   }
 }
