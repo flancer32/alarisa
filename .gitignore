@@ -1,0 +1,8 @@
+/.agent/
+/.codex/
+/.vscode/
+/**/.env
+/**/node_modules/
+/**/output*.md
+/**/output*.zip
+/**/tmp/
