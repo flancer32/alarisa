@@ -110,9 +110,45 @@ test("stop clears started flag and logs shutdown", async () => {
   assert.equal(logger.records[1].message, "Application stopped");
 });
 
+test("run registers the PWA ingress handler before the PWA static source", async () => {
+  const logger = createLoggerProviderStub();
+  const server = createServerStub();
+  const registrations = [];
+  const staticInitializations = [];
+  const humanIngressHandler = { name: "human-ingress" };
+  const staticHandler = {
+    name: "static",
+    async init(params) {
+      staticInitializations.push(params);
+    },
+  };
+  const sourceFactory = { create: (source) => source };
+  const pipelineEngine = { addHandler: (handler) => registrations.push(handler) };
+  const app = new Bootstrap({
+    logger: logger.provider,
+    server,
+    pipelineEngine,
+    humanIngressHandler,
+    staticHandler,
+    sourceFactory,
+  });
+
+  const runPromise = app.run({ projectRoot: "/tmp/alarisa" });
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  await app.stop();
+  await runPromise;
+
+  assert.deepEqual(registrations, [humanIngressHandler, staticHandler]);
+  assert.equal(staticInitializations.length, 1);
+  assert.equal(staticInitializations[0].sources[0].prefix, "/");
+  assert.equal(staticInitializations[0].sources[0].defaults[0], "index.html");
+  assert.match(staticInitializations[0].sources[0].root, /node_modules\/\@flancer32\/alarisa-pwa\/web$/);
+});
+
 test("container resolves Alarisa_Back_Bootstrap from namespace mapping", async () => {
   const container = new Container();
   container.addNamespaceRoot("Alarisa_", path.resolve(process.cwd(), "src"), ".mjs");
+  container.addNamespaceRoot("Alarisa_Pwa_", path.resolve(process.cwd(), "node_modules/@flancer32/alarisa-pwa/src"), ".mjs");
   container.addNamespaceRoot("TeqFw_Log_", path.resolve(process.cwd(), "node_modules/@teqfw/log/src"), ".mjs");
   container.addNamespaceRoot("Fl32_Web_", path.resolve(process.cwd(), "node_modules/@flancer32/teq-web/src"), ".mjs");
   container.addNamespaceRoot("node:", path.resolve(process.cwd(), "node_modules"), ".mjs");

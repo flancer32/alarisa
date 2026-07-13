@@ -1,5 +1,10 @@
 // @ts-check
 
+import { createRequire } from "node:module";
+import path from "node:path";
+
+const require = createRequire(import.meta.url);
+
 /**
  * @namespace Alarisa_Back_Bootstrap
  * @description Root application component for the console startup baseline.
@@ -15,10 +20,11 @@ export default class Alarisa_Back_Bootstrap {
     * @param {Fl32_Web_Back_Server$} [deps.server]
     * @param {Fl32_Web_Back_Config_Runtime__Factory$} [deps.runtimeFactory]
     * @param {Fl32_Web_Back_PipelineEngine$} [deps.pipelineEngine]
+    * @param {Alarisa_Pwa_Back_Handler_HumanIngress$} [deps.humanIngressHandler]
     * @param {Fl32_Web_Back_Handler_Static$} [deps.staticHandler]
     * @param {Fl32_Web_Back_Dto_Source__Factory$} [deps.sourceFactory]
     */
-  constructor({ logger, server, runtimeFactory, pipelineEngine, staticHandler, sourceFactory }) {
+  constructor({ logger, server, runtimeFactory, pipelineEngine, humanIngressHandler, staticHandler, sourceFactory }) {
     let started = false;
     const log = logger.forSource("Alarisa_Back_Bootstrap");
 
@@ -36,12 +42,16 @@ export default class Alarisa_Back_Bootstrap {
         runtimeFactory.freeze();
       }
 
-      if (pipelineEngine && staticHandler && sourceFactory) {
+      if (pipelineEngine && humanIngressHandler && staticHandler && sourceFactory) {
+        const pwaPackageJson = require.resolve("@flancer32/alarisa-pwa/package.json");
+        const pwaWebDirectory = path.join(path.dirname(pwaPackageJson), "web");
+
+        pipelineEngine.addHandler(humanIngressHandler);
         pipelineEngine.addHandler(staticHandler);
         await staticHandler.init({
           sources: [
             sourceFactory.create({
-              root: `${projectRoot}/web`,
+              root: pwaWebDirectory,
               prefix: "/",
               allow: {".": ["."]},
               defaults: ["index.html"],
@@ -83,6 +93,7 @@ export const __deps__ = Object.freeze({
     server: "Fl32_Web_Back_Server$",
     runtimeFactory: "Fl32_Web_Back_Config_Runtime__Factory$",
     pipelineEngine: "Fl32_Web_Back_PipelineEngine$",
+    humanIngressHandler: "Alarisa_Pwa_Back_Handler_HumanIngress$",
     staticHandler: "Fl32_Web_Back_Handler_Static$",
     sourceFactory: "Fl32_Web_Back_Dto_Source__Factory$",
   },
