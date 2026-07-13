@@ -52,32 +52,57 @@ const createLoggerProviderStub = function () {
   };
 };
 
+const createServerStub = function () {
+  return {
+    startCalls: [],
+    stopCalls: 0,
+    async start(options) {
+      this.startCalls.push(options);
+    },
+    async stop() {
+      this.stopCalls += 1;
+    },
+  };
+};
+
 test("run reports startup through bound logger and returns zero", async () => {
   const logger = createLoggerProviderStub();
-  const app = new Bootstrap({ logger: logger.provider });
+  const server = createServerStub();
+  const app = new Bootstrap({ logger: logger.provider, server });
 
-  const result = await app.run({ projectRoot: "/tmp/alarisa", cliArgs: ["--demo"] });
+  const runPromise = app.run({ projectRoot: "/tmp/alarisa", cliArgs: ["--demo"], port: 0 });
+  await new Promise((resolve) => setTimeout(resolve, 50));
+
+  await app.stop();
+  const result = await runPromise;
 
   assert.equal(result, 0);
-  assert.equal(app.isStarted(), true);
+  assert.equal(app.isStarted(), false);
   assert.deepEqual(logger.sources, ["Alarisa_Back_Bootstrap"]);
-  assert.equal(logger.records.length, 1);
+  assert.equal(logger.records.length, 2);
   assert.equal(logger.records[0].level, "info");
   assert.equal(logger.records[0].message, "Application started");
+  assert.equal(logger.records[1].level, "info");
+  assert.equal(logger.records[1].message, "Application stopped");
   assert.deepEqual(logger.records[0].data, {
     projectRoot: "/tmp/alarisa",
     cliArgs: ["--demo"],
   });
+
+  await app.stop();
 });
 
 test("stop clears started flag and logs shutdown", async () => {
   const logger = createLoggerProviderStub();
-  const app = new Bootstrap({ logger: logger.provider });
+  const server = createServerStub();
+  const app = new Bootstrap({ logger: logger.provider, server });
 
-  await app.run({ projectRoot: "/tmp/alarisa", cliArgs: [] });
+  const runPromise = app.run({ projectRoot: "/tmp/alarisa", cliArgs: [], port: 0 });
+  await new Promise((resolve) => setTimeout(resolve, 50));
   assert.equal(app.isStarted(), true);
 
   await app.stop();
+  await runPromise;
 
   assert.equal(app.isStarted(), false);
   assert.equal(logger.records.length, 2);
@@ -89,6 +114,8 @@ test("container resolves Alarisa_Back_Bootstrap from namespace mapping", async (
   const container = new Container();
   container.addNamespaceRoot("Alarisa_", path.resolve(process.cwd(), "src"), ".mjs");
   container.addNamespaceRoot("TeqFw_Log_", path.resolve(process.cwd(), "node_modules/@teqfw/log/src"), ".mjs");
+  container.addNamespaceRoot("Fl32_Web_", path.resolve(process.cwd(), "node_modules/@flancer32/teq-web/src"), ".mjs");
+  container.addNamespaceRoot("node:", path.resolve(process.cwd(), "node_modules"), ".mjs");
 
   const app = await container.get("Alarisa_Back_Bootstrap$");
 

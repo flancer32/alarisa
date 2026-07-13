@@ -3,9 +3,6 @@
 /**
  * @namespace Alarisa_Back_Bootstrap
  * @description Root application component for the console startup baseline.
- */
-
-/**
  * @typedef {object} Alarisa_Back_Bootstrap_Run_Params
  * @property {string} projectRoot
  * @property {string[]} [cliArgs]
@@ -14,33 +11,66 @@
 export default class Alarisa_Back_Bootstrap {
   /**
    * @param {object} deps
-   * @param {TeqFw_Log_Provider} deps.logger
-   */
-  constructor({ logger }) {
+    * @param {TeqFw_Log_Provider$} deps.logger
+    * @param {Fl32_Web_Back_Server$} [deps.server]
+    * @param {Fl32_Web_Back_Config_Runtime__Factory$} [deps.runtimeFactory]
+    * @param {Fl32_Web_Back_PipelineEngine$} [deps.pipelineEngine]
+    * @param {Fl32_Web_Back_Handler_Static$} [deps.staticHandler]
+    * @param {Fl32_Web_Back_Dto_Source__Factory$} [deps.sourceFactory]
+    */
+  constructor({ logger, server, runtimeFactory, pipelineEngine, staticHandler, sourceFactory }) {
     let started = false;
     const log = logger.forSource("Alarisa_Back_Bootstrap");
 
-    /**
-     * @param {Alarisa_Back_Bootstrap_Run_Params} params
-     * @returns {Promise<number>}
-     */
-    this.run = async function ({ projectRoot, cliArgs = [] }) {
+    /** @type {{start: (options?: {port?: number}) => Promise<void>, stop: () => Promise<void>}} */
+    const serverInstance = server ?? {
+      async start() {},
+      async stop() {},
+    };
+    /** @type {((value: number) => void)|undefined} */
+    let resolveRun;
+
+    this.run = async function ({ projectRoot, cliArgs = [], port, serverType = "http" }) {
+      if (runtimeFactory) {
+        runtimeFactory.configure({ port, type: serverType });
+        runtimeFactory.freeze();
+      }
+
+      if (pipelineEngine && staticHandler && sourceFactory) {
+        pipelineEngine.addHandler(staticHandler);
+        await staticHandler.init({
+          sources: [
+            sourceFactory.create({
+              root: `${projectRoot}/web`,
+              prefix: "/",
+              allow: {".": ["."]},
+              defaults: ["index.html"],
+            }),
+          ],
+        });
+      }
+
+      await serverInstance.start();
+
       started = true;
       log.info("Application started", { projectRoot, cliArgs });
-      return 0;
+
+      return new Promise((resolve) => {
+        resolveRun = resolve;
+      });
     };
 
-    /**
-     * @returns {Promise<void>}
-     */
     this.stop = async function () {
+      await serverInstance.stop();
+      if (resolveRun) {
+        const resolve = resolveRun;
+        resolveRun = undefined;
+        resolve(0);
+      }
       started = false;
       log.info("Application stopped");
     };
 
-    /**
-     * @returns {boolean}
-     */
     this.isStarted = function () {
       return started;
     };
@@ -48,5 +78,12 @@ export default class Alarisa_Back_Bootstrap {
 }
 
 export const __deps__ = Object.freeze({
-  logger: "TeqFw_Log_Provider$",
+  default: {
+    logger: "TeqFw_Log_Provider$",
+    server: "Fl32_Web_Back_Server$",
+    runtimeFactory: "Fl32_Web_Back_Config_Runtime__Factory$",
+    pipelineEngine: "Fl32_Web_Back_PipelineEngine$",
+    staticHandler: "Fl32_Web_Back_Handler_Static$",
+    sourceFactory: "Fl32_Web_Back_Dto_Source__Factory$",
+  },
 });

@@ -1,6 +1,6 @@
 # Alarisa
 
-<img src="img/alarisa.webp" alt="Alarisa avatar" width="128" align="right">
+<img src="web/alarisa.webp" alt="Alarisa avatar" width="128" align="right">
 
 Alarisa is a private, human-controlled personal digital avatar for one Principal in the digital world.
 

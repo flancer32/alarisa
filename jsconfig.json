@@ -9,5 +9,5 @@
     "target": "ESNext",
     "types": ["node"]
   },
-  "include": ["bin", "src", "test", "types.d.ts", "node_modules/@teqfw"],
+  "include": ["bin", "src", "test", "types.d.ts", "node_modules/@flancer32", "node_modules/@teqfw"],
 }
