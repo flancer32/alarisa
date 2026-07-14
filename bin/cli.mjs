@@ -22,10 +22,10 @@ for (const entry of entries) {
 
 const app = await container.get("Alarisa_Back_Bootstrap$");
 const cliArgs = process.argv.slice(2);
-const portArg = process.env.PORT ?? cliArgs.find((arg) => arg.startsWith("--port="))?.split("=")[1];
-const typeArg = process.env.SERVER_TYPE ?? cliArgs.find((arg) => arg.startsWith("--type="))?.split("=")[1];
+const portArg = cliArgs.find((arg) => arg.startsWith("--port="))?.split("=")[1];
+const typeArg = cliArgs.find((arg) => arg.startsWith("--type="))?.split("=")[1];
 const port = portArg ? Number.parseInt(portArg, 10) : undefined;
-const serverType = typeArg ?? "http";
+const serverType = typeArg;
 
 let exitCode = 1;
 let stopping = false;

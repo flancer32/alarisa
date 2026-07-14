@@ -40,7 +40,7 @@
   },
   "dependencies": {
     "@flancer32/alarisa-pwa": "github:flancer32/alarisa-pwa",
-    "@flancer32/teq-web": ">=0.13.1",
+    "@flancer32/teq-web": "0.15.0",
     "@teqfw/log": ">=0.1.0"
   },
   "devDependencies": {

@@ -1,10 +1,5 @@
 // @ts-check
 
-import { createRequire } from "node:module";
-import path from "node:path";
-
-const require = createRequire(import.meta.url);
-
 /**
  * @namespace Alarisa_Back_Bootstrap
  * @description Root application component for the console startup baseline.
@@ -13,20 +8,23 @@ const require = createRequire(import.meta.url);
  * @property {string[]} [cliArgs]
  */
 
-export default class Alarisa_Back_Bootstrap {
+export default class Bootstrap {
   /**
-   * @param {object} deps
+ * @param {object} deps
+ * @param {typeof import("node:module")} deps.module
+ * @param {typeof import("node:path")} deps.path
     * @param {TeqFw_Log_Provider$} deps.logger
+    * @param {Alarisa_Config_Loader$} [deps.configLoader]
     * @param {Fl32_Web_Back_Server$} [deps.server]
-    * @param {Fl32_Web_Back_Config_Runtime__Factory$} [deps.runtimeFactory]
     * @param {Fl32_Web_Back_PipelineEngine$} [deps.pipelineEngine]
     * @param {Alarisa_Pwa_Back_Handler_HumanIngress$} [deps.humanIngressHandler]
     * @param {Fl32_Web_Back_Handler_Static$} [deps.staticHandler]
     * @param {Fl32_Web_Back_Dto_Source__Factory$} [deps.sourceFactory]
     */
-  constructor({ logger, server, runtimeFactory, pipelineEngine, humanIngressHandler, staticHandler, sourceFactory }) {
+  constructor({ module, path, logger, configLoader, server, pipelineEngine, humanIngressHandler, staticHandler, sourceFactory }) {
     let started = false;
     const log = logger.forSource("Alarisa_Back_Bootstrap");
+    const require = module?.createRequire?.(import.meta.url);
 
     /** @type {{start: (options?: {port?: number}) => Promise<void>, stop: () => Promise<void>}} */
     const serverInstance = server ?? {
@@ -36,12 +34,10 @@ export default class Alarisa_Back_Bootstrap {
     /** @type {((value: number) => void)|undefined} */
     let resolveRun;
 
-    this.run = async function ({ projectRoot, cliArgs = [], port, serverType = "http" }) {
-      if (runtimeFactory) {
-        runtimeFactory.configure({ port, type: serverType });
-        runtimeFactory.freeze();
+    this.run = async function ({ projectRoot, cliArgs = [], port, serverType }) {
+      if (configLoader) {
+        await configLoader.load({ projectRoot, overrides: { httpPort: port, serverType } });
       }
-
       if (pipelineEngine && humanIngressHandler && staticHandler && sourceFactory) {
         const pwaPackageJson = require.resolve("@flancer32/alarisa-pwa/package.json");
         const pwaWebDirectory = path.join(path.dirname(pwaPackageJson), "web");
@@ -89,9 +85,11 @@ export default class Alarisa_Back_Bootstrap {
 
 export const __deps__ = Object.freeze({
   default: {
+    module: "node:module",
+    path: "node:path",
     logger: "TeqFw_Log_Provider$",
+    configLoader: "Alarisa_Config_Loader$",
     server: "Fl32_Web_Back_Server$",
-    runtimeFactory: "Fl32_Web_Back_Config_Runtime__Factory$",
     pipelineEngine: "Fl32_Web_Back_PipelineEngine$",
     humanIngressHandler: "Alarisa_Pwa_Back_Handler_HumanIngress$",
     staticHandler: "Fl32_Web_Back_Handler_Static$",

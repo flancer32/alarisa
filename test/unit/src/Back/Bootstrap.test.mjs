@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import path from "node:path";
 
 import Container from "@teqfw/di";
@@ -65,10 +66,12 @@ const createServerStub = function () {
   };
 };
 
+const moduleStub = { createRequire };
+
 test("run reports startup through bound logger and returns zero", async () => {
   const logger = createLoggerProviderStub();
   const server = createServerStub();
-  const app = new Bootstrap({ logger: logger.provider, server });
+  const app = new Bootstrap({ logger: logger.provider, server, module: moduleStub, path });
 
   const runPromise = app.run({ projectRoot: "/tmp/alarisa", cliArgs: ["--demo"], port: 0 });
   await new Promise((resolve) => setTimeout(resolve, 50));
@@ -95,7 +98,7 @@ test("run reports startup through bound logger and returns zero", async () => {
 test("stop clears started flag and logs shutdown", async () => {
   const logger = createLoggerProviderStub();
   const server = createServerStub();
-  const app = new Bootstrap({ logger: logger.provider, server });
+  const app = new Bootstrap({ logger: logger.provider, server, module: moduleStub, path });
 
   const runPromise = app.run({ projectRoot: "/tmp/alarisa", cliArgs: [], port: 0 });
   await new Promise((resolve) => setTimeout(resolve, 50));
@@ -127,6 +130,8 @@ test("run registers the PWA ingress handler before the PWA static source", async
   const app = new Bootstrap({
     logger: logger.provider,
     server,
+    module: moduleStub,
+    path,
     pipelineEngine,
     humanIngressHandler,
     staticHandler,

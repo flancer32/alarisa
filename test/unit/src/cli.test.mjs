@@ -7,10 +7,10 @@ import { once } from "node:events";
 
 test("cli stays running until terminated", async () => {
   const projectRoot = path.resolve(process.cwd());
-  const child = spawn(process.execPath, [path.join(projectRoot, "bin/cli.mjs")], {
+  const child = spawn(process.execPath, [path.join(projectRoot, "bin/cli.mjs"), "--port=0"], {
     cwd: projectRoot,
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, PORT: "0" },
+    env: { ...process.env },
   });
 
   let output = "";
@@ -28,7 +28,7 @@ test("cli stays running until terminated", async () => {
     }, 10000);
 
     const onOutput = () => {
-      if (output.includes("Starting server in HTTP/1 mode on port")) {
+      if (output.includes("Starting server in HTTP/1 mode on ")) {
         clearTimeout(timer);
         child.stdout.off("data", onOutput);
         child.stderr.off("data", onOutput);
