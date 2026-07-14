@@ -11,8 +11,6 @@ Environment=HOME=/home/al-user
 Environment=NVM_DIR=/home/al-user/.nvm
 Environment=PATH=/home/al-user/.local/bin:/home/al-user/.local/npm/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/home/al-user/alarisa/app/deploy/user/run-node-app.sh
-StandardOutput=append:/home/al-user/alarisa/var/log/application.log
-StandardError=append:/home/al-user/alarisa/var/log/application.log
 Restart=on-failure
 RestartSec=5s
 TimeoutStopSec=30s
