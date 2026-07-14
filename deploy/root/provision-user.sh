@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Provisions the dedicated unprivileged Alarisa Linux account and its root-owned host boundary.
 
 set -Eeuo pipefail
 
@@ -13,7 +14,7 @@ usage() {
 Provision the unprivileged Linux account used by Alarisa.
 
 Usage:
-  provision-alarisa-user.sh [--dry-run] [USER]
+  provision-user.sh [--dry-run] [USER]
 
 Arguments:
   USER        Linux account name (default: al-user; may also be set with
@@ -114,6 +115,7 @@ run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0750 "$HOME_DIR/alarisa"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0750 "$HOME_DIR/alarisa/app"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/alarisa/work"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/alarisa/var"
+run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/alarisa/var/log"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/.config/alarisa"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/.config/alarisa/agents"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/.config/alarisa/workers"
@@ -170,7 +172,7 @@ fi
 
 SSH_FILE="$SSH_CONFIG_DIR/90-alarisa-deny-$ALARISA_USER.conf"
 SSH_CONTENT=$(cat <<EOF
-# Managed by provision-alarisa-user.sh. Direct SSH login is denied; sudo -iu remains available.
+# Managed by deploy/root/provision-user.sh. Direct SSH login is denied; sudo -iu remains available.
 DenyUsers $ALARISA_USER
 EOF
 )

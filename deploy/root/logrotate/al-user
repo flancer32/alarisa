@@ -1,0 +1,12 @@
+/home/al-user/alarisa/var/log/application.log {
+    su al-user al-user
+    daily
+    maxsize 100M
+    rotate 14
+    missingok
+    notifempty
+    compress
+    delaycompress
+    dateext
+    copytruncate
+}

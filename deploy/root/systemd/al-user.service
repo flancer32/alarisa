@@ -1,0 +1,32 @@
+[Unit]
+Description=Alarisa personal assistant for Linux user al-user
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=al-user
+WorkingDirectory=/home/al-user/alarisa/app
+Environment=HOME=/home/al-user
+Environment=NVM_DIR=/home/al-user/.nvm
+Environment=PATH=/home/al-user/.local/bin:/home/al-user/.local/npm/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/al-user/alarisa/app/deploy/user/run-node-app.sh
+StandardOutput=append:/home/al-user/alarisa/var/log/application.log
+StandardError=append:/home/al-user/alarisa/var/log/application.log
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+KillMode=mixed
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+UMask=0077
+
+# The launcher loads nvm and activates its default Node.js version. The
+# application then loads HOST, PORT, and SERVER_TYPE from the project-root .env.
+# Keep HOST=127.0.0.1 for the Apache reverse-proxy deployment and verify it
+# with ss after every service configuration change.
+
+[Install]
+WantedBy=multi-user.target
