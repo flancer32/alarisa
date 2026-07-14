@@ -1,0 +1,20 @@
+# Replace assistant.example.net before enabling this virtual host.
+# TLS may terminate here or in a separately managed front-end virtual host.
+# Do not add certificate paths until real certificates and deployment policy exist.
+<VirtualHost *:80>
+    ServerName assistant.example.net
+
+    ProxyRequests Off
+    ProxyPreserveHost On
+
+    RequestHeader set X-Forwarded-Proto "http"
+    ProxyPass        / http://127.0.0.1:3000/ retry=0 timeout=60
+    ProxyPassReverse / http://127.0.0.1:3000/
+
+    ErrorLog ${APACHE_LOG_DIR}/alarisa-error.log
+    CustomLog ${APACHE_LOG_DIR}/alarisa-access.log combined
+</VirtualHost>
+
+# Required modules: proxy, proxy_http, headers.
+# No WebSocket proxy rule is included because the current application does not
+# declare a WebSocket transport.

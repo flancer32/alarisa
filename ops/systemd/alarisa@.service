@@ -1,0 +1,32 @@
+[Unit]
+Description=Alarisa personal assistant for Linux user %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%i
+Group=%i
+WorkingDirectory=/home/%i/alarisa/app
+Environment=HOME=/home/%i
+Environment=PATH=/home/%i/.local/bin:/home/%i/.local/npm/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PORT=3000
+Environment=SERVER_TYPE=http
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+KillMode=mixed
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+UMask=0077
+
+# Do not enable this unit until the application can bind explicitly to
+# 127.0.0.1 (or a Unix socket) and that binding has been verified with ss.
+# The current application dependency calls listen(port), which may bind a
+# wildcard address. The unit intentionally does not pretend that HOST is used.
+
+[Install]
+WantedBy=multi-user.target
