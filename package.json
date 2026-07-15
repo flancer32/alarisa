@@ -39,7 +39,7 @@
     "test": "npm run test:unit"
   },
   "dependencies": {
-    "@flancer32/alarisa-pwa": "github:flancer32/alarisa-pwa",
+    "@flancer32/alarisa-mob": "github:flancer32/alarisa-mob",
     "@flancer32/teq-web": "0.15.0",
     "@teqfw/log": ">=0.1.0"
   },

@@ -17,7 +17,7 @@ export default class Bootstrap {
     * @param {Alarisa_Config_Loader$} [deps.configLoader]
     * @param {Fl32_Web_Back_Server$} [deps.server]
     * @param {Fl32_Web_Back_PipelineEngine$} [deps.pipelineEngine]
-    * @param {Alarisa_Pwa_Back_Handler_HumanIngress$} [deps.humanIngressHandler]
+    * @param {Alarisa_Mob_Back_Handler_HumanIngress$} [deps.humanIngressHandler]
     * @param {Fl32_Web_Back_Handler_Static$} [deps.staticHandler]
     * @param {Fl32_Web_Back_Dto_Source__Factory$} [deps.sourceFactory]
     */
@@ -39,15 +39,15 @@ export default class Bootstrap {
         await configLoader.load({ projectRoot, overrides: { httpPort: port, serverType } });
       }
       if (pipelineEngine && humanIngressHandler && staticHandler && sourceFactory) {
-        const pwaPackageJson = require.resolve("@flancer32/alarisa-pwa/package.json");
-        const pwaWebDirectory = path.join(path.dirname(pwaPackageJson), "web");
+        const mobPackageJson = require.resolve("@flancer32/alarisa-mob/package.json");
+        const mobWebDirectory = path.join(path.dirname(mobPackageJson), "web");
 
         pipelineEngine.addHandler(humanIngressHandler);
         pipelineEngine.addHandler(staticHandler);
         await staticHandler.init({
           sources: [
             sourceFactory.create({
-              root: pwaWebDirectory,
+              root: mobWebDirectory,
               prefix: "/",
               allow: {".": ["."]},
               defaults: ["index.html"],
@@ -91,7 +91,7 @@ export const __deps__ = Object.freeze({
     configLoader: "Alarisa_Config_Loader$",
     server: "Fl32_Web_Back_Server$",
     pipelineEngine: "Fl32_Web_Back_PipelineEngine$",
-    humanIngressHandler: "Alarisa_Pwa_Back_Handler_HumanIngress$",
+    humanIngressHandler: "Alarisa_Mob_Back_Handler_HumanIngress$",
     staticHandler: "Fl32_Web_Back_Handler_Static$",
     sourceFactory: "Fl32_Web_Back_Dto_Source__Factory$",
   },

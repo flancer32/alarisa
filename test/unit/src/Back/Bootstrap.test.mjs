@@ -147,13 +147,13 @@ test("run registers the PWA ingress handler before the PWA static source", async
   assert.equal(staticInitializations.length, 1);
   assert.equal(staticInitializations[0].sources[0].prefix, "/");
   assert.equal(staticInitializations[0].sources[0].defaults[0], "index.html");
-  assert.match(staticInitializations[0].sources[0].root, /node_modules\/\@flancer32\/alarisa-pwa\/web$/);
+  assert.match(staticInitializations[0].sources[0].root, /node_modules\/\@flancer32\/alarisa-mob\/web$/);
 });
 
 test("container resolves Alarisa_Back_Bootstrap from namespace mapping", async () => {
   const container = new Container();
   container.addNamespaceRoot("Alarisa_", path.resolve(process.cwd(), "src"), ".mjs");
-  container.addNamespaceRoot("Alarisa_Pwa_", path.resolve(process.cwd(), "node_modules/@flancer32/alarisa-pwa/src"), ".mjs");
+  container.addNamespaceRoot("Alarisa_Mob_", path.resolve(process.cwd(), "node_modules/@flancer32/alarisa-mob/src"), ".mjs");
   container.addNamespaceRoot("TeqFw_Log_", path.resolve(process.cwd(), "node_modules/@teqfw/log/src"), ".mjs");
   container.addNamespaceRoot("Fl32_Web_", path.resolve(process.cwd(), "node_modules/@flancer32/teq-web/src"), ".mjs");
   container.addNamespaceRoot("node:", path.resolve(process.cwd(), "node_modules"), ".mjs");
