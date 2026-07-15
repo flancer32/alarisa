@@ -116,6 +116,7 @@ run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0750 "$HOME_DIR/alarisa/
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/alarisa/work"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/alarisa/var"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/alarisa/var/log"
+run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/alarisa/var/data"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/.config/alarisa"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/.config/alarisa/agents"
 run install -d -o "$ALARISA_USER" -g "$ALARISA_USER" -m 0700 "$HOME_DIR/.config/alarisa/workers"
