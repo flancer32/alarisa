@@ -20,7 +20,7 @@ for (const entry of entries) {
   container.addNamespaceRoot(entry.prefix, entry.dirAbs, entry.ext);
 }
 
-const app = await container.get("Alarisa_Back_Bootstrap$");
+const app = await container.get("Alarisa_Host_Bootstrap$");
 const cliArgs = process.argv.slice(2);
 const portArg = cliArgs.find((arg) => arg.startsWith("--port="))?.split("=")[1];
 const typeArg = cliArgs.find((arg) => arg.startsWith("--type="))?.split("=")[1];

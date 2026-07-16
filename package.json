@@ -1,6 +1,6 @@
 {
   "name": "@flancer32/alarisa",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Private, human-controlled personal digital avatar runtime for one Principal.",
   "type": "module",
   "repository": {
@@ -21,6 +21,15 @@
     "teqfw"
   ],
   "types": "types.d.ts",
+  "files": [
+    ".env.example",
+    "bin",
+    "src",
+    "web",
+    "types.d.ts",
+    "CHANGELOG.md",
+    "README.md"
+  ],
   "engines": {
     "node": ">=20"
   },
@@ -39,7 +48,10 @@
     "test": "npm run test:unit"
   },
   "dependencies": {
-    "@flancer32/alarisa-mob": "github:flancer32/alarisa-mob",
+    "@flancer32/alarisa-back": "github:flancer32/alarisa-back#main",
+    "@flancer32/alarisa-comm": "github:flancer32/alarisa-comm#main",
+    "@flancer32/alarisa-desk": "github:flancer32/alarisa-desk#main",
+    "@flancer32/alarisa-mob": "github:flancer32/alarisa-mob#main",
     "@flancer32/teq-web": "0.15.0",
     "@teqfw/log": ">=0.1.0"
   },

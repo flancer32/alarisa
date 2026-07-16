@@ -9,7 +9,7 @@ export default class Loader {
    * @param {object} deps
    * @param {typeof import("node:fs/promises")} deps.fs
    * @param {typeof import("node:path")} deps.path
-   * @param {Alarisa_Config_Runtime__Factory} deps.appCfgRuntimeFactory
+   * @param {Alarisa_Back_Config_Runtime__Factory} deps.appCfgRuntimeFactory
    */
   constructor({ fs, path, appCfgRuntimeFactory }) {
     const parseEnv = (content) => {
@@ -50,11 +50,11 @@ export default class Loader {
       return value;
     };
 
-    const buildRuntimeConfig = (env, overrides = {}) => ({
+    const buildRuntimeConfig = (env, projectRoot, overrides = {}) => ({
       host: overrides.host ?? (env.HOST !== undefined ? parseNonEmpty("HOST", env.HOST) : "127.0.0.1"),
       httpPort: overrides.httpPort ?? (env.PORT !== undefined ? parsePort(env.PORT) : 3000),
       serverType: overrides.serverType ?? (env.SERVER_TYPE !== undefined ? parseServerType(env.SERVER_TYPE) : "http"),
-      dataRoot: overrides.dataRoot ?? (env.ALARISA_DATA_ROOT !== undefined ? parseNonEmpty("ALARISA_DATA_ROOT", env.ALARISA_DATA_ROOT) : "var"),
+      dataRoot: path.resolve(projectRoot, overrides.dataRoot ?? (env.ALARISA_DATA_ROOT !== undefined ? parseNonEmpty("ALARISA_DATA_ROOT", env.ALARISA_DATA_ROOT) : "var")),
     });
 
     const readEnvFile = async (projectRoot) => {
@@ -70,7 +70,7 @@ export default class Loader {
 
     this.load = async function ({ projectRoot, overrides = {} }) {
       const env = await readEnvFile(projectRoot);
-      const config = buildRuntimeConfig(env, overrides);
+      const config = buildRuntimeConfig(env, projectRoot, overrides);
       appCfgRuntimeFactory.configure(config);
       return appCfgRuntimeFactory.freeze();
     };
@@ -81,6 +81,6 @@ export const __deps__ = Object.freeze({
   default: {
     fs: "node:fs/promises",
     path: "node:path",
-    appCfgRuntimeFactory: "Alarisa_Config_Runtime__Factory$",
+    appCfgRuntimeFactory: "Alarisa_Back_Config_Runtime__Factory$",
   },
 });

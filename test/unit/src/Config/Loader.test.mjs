@@ -14,7 +14,10 @@ const createLoader = (files = {}) => {
       return files[filePath];
     },
   };
-  const path = { join: (root, name) => `${root}/${name}` };
+  const path = {
+    join: (root, name) => `${root}/${name}`,
+    resolve: (root, value) => value.startsWith("/") ? value : `${root}/${value}`,
+  };
   const calls = [];
   const factory = {
     configure(params) {
@@ -35,7 +38,7 @@ test("loads defaults when project .env is absent", async () => {
     host: "127.0.0.1",
     httpPort: 3000,
     serverType: "http",
-    dataRoot: "var",
+    dataRoot: "/tmp/app/var",
   });
   assert.equal(result.frozen, true);
 });
@@ -50,7 +53,7 @@ test("parses supported values, comments, and quotes", async () => {
     host: "127.0.0.1",
     httpPort: 3042,
     serverType: "https",
-    dataRoot: "var/data",
+    dataRoot: "/tmp/app/var/data",
   });
 });
 

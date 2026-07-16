@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.0] - 2026-07-16 - Multi-application server composition
+
+### Added
+
+- Added a host-owned manual desktop/mobile channel choice at `/`.
+- Added independent `/desk/` and `/mob/` static mounts and reserved `/hooks/`, `/.well-known/`, and `/_ops/` zones.
+- Added the shared `comm` Principal API handler and durable `back` ingress composition.
+
+### Changed
+
+- Renamed the server composition component to `Alarisa_Host_Bootstrap` to avoid the reusable `Alarisa_Back_` namespace.
+- Moved server runtime configuration into `@flancer32/alarisa-back` and made the data root absolute.
+
 ## [0.2.0] - 2026-07-09 - TeqFW CLI bootstrap baseline
 
 ### Added
