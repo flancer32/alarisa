@@ -4,6 +4,8 @@ import { spawn } from "node:child_process";
 import path from "node:path";
 import process from "node:process";
 import { once } from "node:events";
+import fs from "node:fs/promises";
+import os from "node:os";
 
 test("cli stays running until terminated", async () => {
   const projectRoot = path.resolve(process.cwd());
@@ -55,4 +57,27 @@ test("cli stays running until terminated", async () => {
 
   assert.equal(code, 0);
   assert.equal(signal, null);
+});
+
+test("cli issues one short-lived enrollment URL without starting the server", async () => {
+  const projectRoot = path.resolve(process.cwd());
+  const dataRoot = await fs.mkdtemp(path.join(os.tmpdir(), "alarisa-cli-enrollment-"));
+  const child = spawn(process.execPath, [
+    path.join(projectRoot, "bin/cli.mjs"),
+    "auth:enroll",
+    "--surface=mob",
+    "--label=Phone",
+    "--ttl-minutes=10",
+    `--data-root=${dataRoot}`,
+  ], {cwd: projectRoot, stdio: ["ignore", "pipe", "pipe"], env: {...process.env}});
+  let output = "";
+  child.stdout.on("data", (chunk) => { output += chunk.toString(); });
+  child.stderr.on("data", (chunk) => { output += chunk.toString(); });
+
+  const [code] = await once(child, "exit");
+
+  assert.equal(code, 0, output);
+  assert.match(output, /Enrollment URL: http:\/\/localhost:3000\/mob\/\?enrollment=/);
+  assert.match(output, /Expires at:/);
+  assert.equal((await fs.readdir(path.join(dataRoot, "authentication", "enrollments"))).length, 1);
 });

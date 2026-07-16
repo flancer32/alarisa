@@ -50,12 +50,54 @@ export default class Loader {
       return value;
     };
 
-    const buildRuntimeConfig = (env, projectRoot, overrides = {}) => ({
-      host: overrides.host ?? (env.HOST !== undefined ? parseNonEmpty("HOST", env.HOST) : "127.0.0.1"),
-      httpPort: overrides.httpPort ?? (env.PORT !== undefined ? parsePort(env.PORT) : 3000),
-      serverType: overrides.serverType ?? (env.SERVER_TYPE !== undefined ? parseServerType(env.SERVER_TYPE) : "http"),
-      dataRoot: path.resolve(projectRoot, overrides.dataRoot ?? (env.ALARISA_DATA_ROOT !== undefined ? parseNonEmpty("ALARISA_DATA_ROOT", env.ALARISA_DATA_ROOT) : "var")),
-    });
+    const parsePositive = (key, value) => {
+      const result = Number.parseInt(value, 10);
+      if (!Number.isInteger(result) || String(result) !== value || result <= 0) {
+        throw new Error(`Invalid runtime configuration field ${key}: value must be a positive integer.`);
+      }
+      return result;
+    };
+
+    const parseOrigin = (value) => {
+      let origin;
+      try {
+        origin = new URL(value).origin;
+      } catch {
+        throw new Error("Invalid runtime configuration field ALARISA_AUTH_ORIGIN: expected an HTTP or HTTPS origin.");
+      }
+      if (!origin.startsWith("http://") && !origin.startsWith("https://")) {
+        throw new Error("Invalid runtime configuration field ALARISA_AUTH_ORIGIN: expected an HTTP or HTTPS origin.");
+      }
+      if (origin !== value.replace(/\/$/, "")) {
+        throw new Error("Invalid runtime configuration field ALARISA_AUTH_ORIGIN: paths are not allowed.");
+      }
+      return origin;
+    };
+
+    const parseRpId = (value) => {
+      if (!/^(localhost|[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?)$/.test(value)) {
+        throw new Error("Invalid runtime configuration field ALARISA_AUTH_RP_ID: expected a domain name or localhost.");
+      }
+      return value;
+    };
+
+    const buildRuntimeConfig = (env, projectRoot, overrides = {}) => {
+      const httpPort = overrides.httpPort ?? (env.PORT !== undefined ? parsePort(env.PORT) : 3000);
+      return {
+        host: overrides.host ?? (env.HOST !== undefined ? parseNonEmpty("HOST", env.HOST) : "127.0.0.1"),
+        httpPort,
+        serverType: overrides.serverType ?? (env.SERVER_TYPE !== undefined ? parseServerType(env.SERVER_TYPE) : "http"),
+        dataRoot: path.resolve(projectRoot, overrides.dataRoot ?? (env.ALARISA_DATA_ROOT !== undefined ? parseNonEmpty("ALARISA_DATA_ROOT", env.ALARISA_DATA_ROOT) : "var")),
+        authOrigin: overrides.authOrigin ?? (env.ALARISA_AUTH_ORIGIN !== undefined ? parseOrigin(env.ALARISA_AUTH_ORIGIN) : `http://localhost:${httpPort}`),
+        authRpId: overrides.authRpId ?? (env.ALARISA_AUTH_RP_ID !== undefined ? parseRpId(env.ALARISA_AUTH_RP_ID) : "localhost"),
+        authRpName: overrides.authRpName ?? (env.ALARISA_AUTH_RP_NAME !== undefined ? parseNonEmpty("ALARISA_AUTH_RP_NAME", env.ALARISA_AUTH_RP_NAME) : "Alarisa"),
+        authChallengeTtlMs: (env.ALARISA_AUTH_CHALLENGE_MINUTES !== undefined ? parsePositive("ALARISA_AUTH_CHALLENGE_MINUTES", env.ALARISA_AUTH_CHALLENGE_MINUTES) : 5) * 60_000,
+        authEnrollmentTtlMs: (env.ALARISA_AUTH_ENROLLMENT_MINUTES !== undefined ? parsePositive("ALARISA_AUTH_ENROLLMENT_MINUTES", env.ALARISA_AUTH_ENROLLMENT_MINUTES) : 15) * 60_000,
+        authMobSessionTtlMs: (env.ALARISA_AUTH_MOB_SESSION_DAYS !== undefined ? parsePositive("ALARISA_AUTH_MOB_SESSION_DAYS", env.ALARISA_AUTH_MOB_SESSION_DAYS) : 90) * 86_400_000,
+        authDeskSessionTtlMs: (env.ALARISA_AUTH_DESK_SESSION_DAYS !== undefined ? parsePositive("ALARISA_AUTH_DESK_SESSION_DAYS", env.ALARISA_AUTH_DESK_SESSION_DAYS) : 180) * 86_400_000,
+        authStepUpTtlMs: (env.ALARISA_AUTH_STEP_UP_MINUTES !== undefined ? parsePositive("ALARISA_AUTH_STEP_UP_MINUTES", env.ALARISA_AUTH_STEP_UP_MINUTES) : 30) * 60_000,
+      };
+    };
 
     const readEnvFile = async (projectRoot) => {
       const filePath = path.join(projectRoot, ".env");

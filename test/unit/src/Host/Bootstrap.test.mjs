@@ -35,12 +35,14 @@ const createServerStub = function () {
 
 const moduleStub = {createRequire};
 
-test("composes handlers and three collision-free static sources", async () => {
+test("composes handlers and four collision-free static sources", async () => {
   const logger = createLoggerProviderStub();
   const server = createServerStub();
   const registrations = [];
   const staticInitializations = [];
   const principalContributionHandler = {name: "principal"};
+  const authenticationHandler = {name: "authentication"};
+  const principalApiAuthHandler = {name: "api-auth"};
   const reservedRoutesHandler = {name: "reserved"};
   const staticHandler = {name: "static", async init(params) { staticInitializations.push(params); }};
   const sourceFactory = {create: (source) => source};
@@ -53,6 +55,8 @@ test("composes handlers and three collision-free static sources", async () => {
     path,
     configLoader,
     pipelineEngine,
+    authenticationHandler,
+    principalApiAuthHandler,
     principalContributionHandler,
     reservedRoutesHandler,
     staticHandler,
@@ -64,10 +68,11 @@ test("composes handlers and three collision-free static sources", async () => {
   await app.stop();
   await runPromise;
 
-  assert.deepEqual(registrations, [principalContributionHandler, reservedRoutesHandler, staticHandler]);
-  assert.deepEqual(staticInitializations[0].sources.map((source) => source.prefix), ["/", "/desk/", "/mob/"]);
-  assert.match(staticInitializations[0].sources[1].root, /node_modules\/\@flancer32\/alarisa-desk\/web$/);
-  assert.match(staticInitializations[0].sources[2].root, /node_modules\/\@flancer32\/alarisa-mob\/web$/);
+  assert.deepEqual(registrations, [authenticationHandler, principalApiAuthHandler, principalContributionHandler, reservedRoutesHandler, staticHandler]);
+  assert.deepEqual(staticInitializations[0].sources.map((source) => source.prefix), ["/", "/_assets/comm/", "/desk/", "/mob/"]);
+  assert.match(staticInitializations[0].sources[1].root, /node_modules\/\@flancer32\/alarisa-comm\/web$/);
+  assert.match(staticInitializations[0].sources[2].root, /node_modules\/\@flancer32\/alarisa-desk\/web$/);
+  assert.match(staticInitializations[0].sources[3].root, /node_modules\/\@flancer32\/alarisa-mob\/web$/);
 });
 
 test("container resolves the host bootstrap without back namespace collision", async () => {

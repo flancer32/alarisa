@@ -14,12 +14,14 @@ export default class Bootstrap {
    * @param {Alarisa_Config_Loader} deps.configLoader
    * @param {Fl32_Web_Back_Server} deps.server
    * @param {Fl32_Web_Back_PipelineEngine} deps.pipelineEngine
+   * @param {Alarisa_Comm_Back_Handler_Authentication} deps.authenticationHandler
+   * @param {Alarisa_Host_Handler_PrincipalApiAuth} deps.principalApiAuthHandler
    * @param {Alarisa_Comm_Back_Handler_PrincipalContribution} deps.principalContributionHandler
    * @param {Alarisa_Host_Handler_ReservedRoutes} deps.reservedRoutesHandler
    * @param {Fl32_Web_Back_Handler_Static} deps.staticHandler
    * @param {Fl32_Web_Back_Dto_Source__Factory} deps.sourceFactory
    */
-  constructor({module, path, logger, configLoader, server, pipelineEngine, principalContributionHandler, reservedRoutesHandler, staticHandler, sourceFactory}) {
+  constructor({module, path, logger, configLoader, server, pipelineEngine, authenticationHandler, principalApiAuthHandler, principalContributionHandler, reservedRoutesHandler, staticHandler, sourceFactory}) {
     let started = false;
     const log = logger.forSource("Alarisa_Host_Bootstrap");
     const require = module.createRequire(import.meta.url);
@@ -57,6 +59,12 @@ export default class Bootstrap {
           defaults: ["index.html"],
         },
         {
+          root: packageWebRoot("@flancer32/alarisa-comm"),
+          prefix: "/_assets/comm/",
+          allow: {".": ["."]},
+          defaults: [],
+        },
+        {
           root: packageWebRoot("@flancer32/alarisa-desk"),
           prefix: "/desk/",
           allow: {".": ["."]},
@@ -70,6 +78,8 @@ export default class Bootstrap {
         },
       ]);
 
+      pipelineEngine.addHandler(authenticationHandler);
+      pipelineEngine.addHandler(principalApiAuthHandler);
       pipelineEngine.addHandler(principalContributionHandler);
       pipelineEngine.addHandler(reservedRoutesHandler);
       pipelineEngine.addHandler(staticHandler);
@@ -108,6 +118,8 @@ export const __deps__ = Object.freeze({
   configLoader: "Alarisa_Config_Loader$",
   server: "Fl32_Web_Back_Server$",
   pipelineEngine: "Fl32_Web_Back_PipelineEngine$",
+  authenticationHandler: "Alarisa_Comm_Back_Handler_Authentication$",
+  principalApiAuthHandler: "Alarisa_Host_Handler_PrincipalApiAuth$",
   principalContributionHandler: "Alarisa_Comm_Back_Handler_PrincipalContribution$",
   reservedRoutesHandler: "Alarisa_Host_Handler_ReservedRoutes$",
   staticHandler: "Fl32_Web_Back_Handler_Static$",

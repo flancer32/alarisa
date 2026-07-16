@@ -20,12 +20,32 @@ for (const entry of entries) {
   container.addNamespaceRoot(entry.prefix, entry.dirAbs, entry.ext);
 }
 
-const app = await container.get("Alarisa_Host_Bootstrap$");
 const cliArgs = process.argv.slice(2);
+const command = cliArgs[0];
 const portArg = cliArgs.find((arg) => arg.startsWith("--port="))?.split("=")[1];
 const typeArg = cliArgs.find((arg) => arg.startsWith("--type="))?.split("=")[1];
 const port = portArg ? Number.parseInt(portArg, 10) : undefined;
 const serverType = typeArg;
+
+if (command === "auth:enroll") {
+  const value = (name) => cliArgs.find((arg) => arg.startsWith(`--${name}=`))?.slice(name.length + 3);
+  const surface = value("surface") ?? "mob";
+  const label = value("label") ?? `${surface} device`;
+  const ttlMinutes = value("ttl-minutes") ? Number.parseInt(value("ttl-minutes"), 10) : undefined;
+  const dataRoot = value("data-root");
+  const configLoader = await container.get("Alarisa_Config_Loader$");
+  const config = await configLoader.load({projectRoot, overrides: {dataRoot}});
+  const auth = await container.get("Alarisa_Back_Auth_Service$");
+  const enrollment = await auth.issueEnrollment({label, surface, ttlMs: ttlMinutes === undefined ? undefined : ttlMinutes * 60_000});
+  const url = new URL(`/${surface}/`, config.authOrigin);
+  url.searchParams.set("enrollment", enrollment.token);
+  console.log(`Enrollment URL: ${url}`);
+  console.log(`Expires at: ${enrollment.expiresAt}`);
+  process.exitCode = 0;
+  process.exit(0);
+}
+
+const app = await container.get("Alarisa_Host_Bootstrap$");
 
 let exitCode = 1;
 let stopping = false;
