@@ -5,7 +5,7 @@ import path from "node:path";
 
 import Container from "@teqfw/di";
 
-import Bootstrap from "../../../../src/Host/Bootstrap.mjs";
+import Bootstrap from "../../../../src/Bootstrap.mjs";
 
 const createLoggerProviderStub = function () {
   const records = [];
@@ -44,16 +44,26 @@ test("composes handlers and four collision-free static sources", async () => {
   const authenticationHandler = {name: "authentication"};
   const principalApiAuthHandler = {name: "api-auth"};
   const reservedRoutesHandler = {name: "reserved"};
+  const authService = {};
   const staticHandler = {name: "static", async init(params) { staticInitializations.push(params); }};
   const sourceFactory = {create: (source) => source};
   const pipelineEngine = {addHandler: (handler) => registrations.push(handler)};
-  const configLoader = {load: async () => ({})};
+  const cfgLoader = {load: async () => {}};
+  const dotenvSource = {create: () => ({})};
+  const processEnvSource = {create: () => ({})};
+  const runtimeFactory = {configure() {}, freeze() { return {}; }};
   const app = new Bootstrap({
     logger: logger.provider,
     server,
     module: moduleStub,
     path,
-    configLoader,
+    fs: {access: async () => { const error = new Error("missing"); error.code = "ENOENT"; throw error; }},
+    process: {env: {}},
+    cfgLoader,
+    dotenvSource,
+    processEnvSource,
+    runtimeFactory,
+    authService,
     pipelineEngine,
     authenticationHandler,
     principalApiAuthHandler,
@@ -81,10 +91,11 @@ test("container resolves the host bootstrap without back namespace collision", a
   container.addNamespaceRoot("Alarisa_Back_", path.resolve(process.cwd(), "node_modules/@flancer32/alarisa-back/src"), ".mjs");
   container.addNamespaceRoot("Alarisa_Comm_", path.resolve(process.cwd(), "node_modules/@flancer32/alarisa-comm/src"), ".mjs");
   container.addNamespaceRoot("TeqFw_Log_", path.resolve(process.cwd(), "node_modules/@teqfw/log/src"), ".mjs");
+  container.addNamespaceRoot("TeqFw_Cfg_", path.resolve(process.cwd(), "node_modules/@teqfw/cfg/src"), ".mjs");
   container.addNamespaceRoot("Fl32_Web_", path.resolve(process.cwd(), "node_modules/@flancer32/teq-web/src"), ".mjs");
   container.addNamespaceRoot("node:", path.resolve(process.cwd(), "node_modules"), ".mjs");
 
-  const app = await container.get("Alarisa_Host_Bootstrap$");
+  const app = await container.get("Alarisa_Bootstrap$");
 
   assert.ok(app instanceof Bootstrap);
   assert.equal(typeof app.run, "function");

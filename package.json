@@ -52,7 +52,7 @@
     "@flancer32/alarisa-comm": "github:flancer32/alarisa-comm#main",
     "@flancer32/alarisa-desk": "github:flancer32/alarisa-desk#main",
     "@flancer32/alarisa-mob": "github:flancer32/alarisa-mob#main",
-    "@flancer32/teq-web": "0.15.0",
+    "@flancer32/teq-web": "github:flancer32/teq-web#main",
     "@teqfw/log": ">=0.1.0"
   },
   "devDependencies": {
