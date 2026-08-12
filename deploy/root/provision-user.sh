@@ -7,7 +7,6 @@ DEFAULT_USER="al-user"
 ALARISA_USER="${ALARISA_USER:-$DEFAULT_USER}"
 DRY_RUN=0
 POSITIONAL_SEEN=0
-SSH_CONFIG_DIR="/etc/ssh/sshd_config.d"
 
 usage() {
   cat <<'EOF'
@@ -25,7 +24,7 @@ Options:
   -h, --help  Show this help.
 
 Run this script as root. It creates the account and directories, configures a
-user-local npm prefix and login PATH, and denies direct SSH login for the user.
+user-local npm prefix and login PATH. It leaves SSH access policy unchanged.
 It does not install Alarisa, Node.js, npm, or any agent CLI.
 EOF
 }
@@ -171,65 +170,8 @@ else
   chmod 0640 "$PROFILE"
 fi
 
-SSH_FILE="$SSH_CONFIG_DIR/90-alarisa-deny-$ALARISA_USER.conf"
-SSH_CONTENT=$(cat <<EOF
-# Managed by deploy/root/provision-user.sh. Direct SSH login is denied; sudo -iu remains available.
-DenyUsers $ALARISA_USER
-EOF
-)
-
-if ((DRY_RUN)); then
-  log "+ validate and install $SSH_FILE with: DenyUsers $ALARISA_USER"
-else
-  command -v sshd >/dev/null || die "sshd is required but was not found."
-  install -d -o root -g root -m 0755 "$SSH_CONFIG_DIR"
-  sshd -t || die "Existing SSH configuration is invalid; no SSH changes were made."
-  SSH_TMP="$(mktemp "$SSH_CONFIG_DIR/.alarisa-ssh.XXXXXX")"
-  SSH_BACKUP=""
-  SSH_CHANGED=0
-  SSH_EXISTED=0
-  cleanup() { rm -f "$SSH_TMP"; }
-  trap cleanup EXIT
-  printf '%s\n' "$SSH_CONTENT" >"$SSH_TMP"
-  chown root:root "$SSH_TMP"
-  chmod 0644 "$SSH_TMP"
-
-  if [[ -f "$SSH_FILE" ]]; then
-    SSH_EXISTED=1
-    if ! cmp -s "$SSH_TMP" "$SSH_FILE"; then
-      SSH_BACKUP="$SSH_FILE.bak.$(date -u +%Y%m%dT%H%M%SZ)"
-      cp --preserve=all "$SSH_FILE" "$SSH_BACKUP"
-    fi
-  fi
-
-  if [[ ! -f "$SSH_FILE" ]] || ! cmp -s "$SSH_TMP" "$SSH_FILE"; then
-    install -o root -g root -m 0644 "$SSH_TMP" "$SSH_FILE"
-    SSH_CHANGED=1
-  fi
-
-  if ! sshd -t; then
-    if ((SSH_CHANGED)); then
-      if ((SSH_EXISTED)); then
-        cp --preserve=all "$SSH_BACKUP" "$SSH_FILE"
-      else
-        rm -f "$SSH_FILE"
-      fi
-    fi
-    sshd -t || die "SSH configuration remains invalid after rollback; inspect it immediately."
-    die "Proposed SSH configuration was invalid and has been rolled back."
-  fi
-
-  if systemctl is-active --quiet ssh.service; then
-    systemctl reload ssh.service
-  elif systemctl is-active --quiet sshd.service; then
-    systemctl reload sshd.service
-  else
-    log "SSH service is not active; configuration was validated but not reloaded."
-  fi
-fi
-
 log "Provisioning complete for: $ALARISA_USER"
 log "Home: $HOME_DIR"
 log "Administrator login: sudo -iu $ALARISA_USER"
 log "Next: place the controlled project checkout in $HOME_DIR/alarisa/app, create its .env with mode 0600, and install dependencies with npm ci as $ALARISA_USER."
-log "Verify: id $ALARISA_USER; getent passwd $ALARISA_USER; sshd -t"
+log "Verify: id $ALARISA_USER; getent passwd $ALARISA_USER"

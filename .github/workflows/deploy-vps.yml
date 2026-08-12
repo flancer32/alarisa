@@ -71,6 +71,7 @@ jobs:
           ssh \
             -i "$HOME/.ssh/deploy_key" \
             -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
             "$VPS_USER@$VPS_HOST" \
@@ -94,5 +95,5 @@ jobs:
           git pull --ff-only
           npm ci
           sudo -n systemctl start "$service_name"
-          sudo -n systemctl status "$service_name" >/dev/null
+          sudo -n systemctl is-active --quiet "$service_name"
           REMOTE_SCRIPT
