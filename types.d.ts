@@ -17,6 +17,9 @@ declare global {
   type Alarisa_Host_Handler_ReservedRoutes$ = InstanceType<Alarisa_Host_Handler_ReservedRoutes>;
   type Alarisa_Host_Handler_PrincipalApiAuth = typeof import("./src/Host/Handler/PrincipalApiAuth.mjs").default;
   type Alarisa_Host_Handler_PrincipalApiAuth$ = InstanceType<Alarisa_Host_Handler_PrincipalApiAuth>;
+  type Alarisa_State_Database = typeof import("./src/State/Database.mjs").default;
+  type Alarisa_State_Database$ = InstanceType<Alarisa_State_Database>;
+  type Alarisa_Node_FsPromises = typeof import("node:fs/promises");
   type Alarisa_Node_Module = typeof import("node:module");
   type Alarisa_Node_Path = typeof import("node:path");
 }
