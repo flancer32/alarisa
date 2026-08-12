@@ -24,20 +24,10 @@ const createLoggerProviderStub = function () {
   };
 };
 
-const createServerStub = function () {
-  return {
-    startCalls: 0,
-    stopCalls: 0,
-    async start() { this.startCalls += 1; },
-    async stop() { this.stopCalls += 1; },
-  };
-};
-
 const moduleStub = {createRequire};
 
 test("composes handlers and four collision-free static sources", async () => {
   const logger = createLoggerProviderStub();
-  const server = createServerStub();
   const registrations = [];
   const staticInitializations = [];
   const principalContributionHandler = {name: "principal"};
@@ -48,20 +38,12 @@ test("composes handlers and four collision-free static sources", async () => {
   const staticHandler = {name: "static", async init(params) { staticInitializations.push(params); }};
   const sourceFactory = {create: (source) => source};
   const pipelineEngine = {addHandler: (handler) => registrations.push(handler)};
-  const cfgLoader = {load: async () => {}};
-  const dotenvSource = {create: () => ({})};
-  const processEnvSource = {create: () => ({})};
-  const runtimeFactory = {configure() {}, freeze() { return {}; }};
+  const runtimeFactory = {configure() {}, freeze() { return {authOrigin: "http://localhost:3000"}; }};
   const app = new Bootstrap({
     logger: logger.provider,
-    server,
     module: moduleStub,
     path,
-    fs: {access: async () => { const error = new Error("missing"); error.code = "ENOENT"; throw error; }},
-    process: {env: {}},
-    cfgLoader,
-    dotenvSource,
-    processEnvSource,
+    cliConfig: {applicationRoot: process.cwd(), argv: []},
     runtimeFactory,
     authService,
     pipelineEngine,
@@ -73,10 +55,8 @@ test("composes handlers and four collision-free static sources", async () => {
     sourceFactory,
   });
 
-  const runPromise = app.run({projectRoot: process.cwd()});
-  await new Promise((resolve) => setTimeout(resolve, 10));
-  await app.stop();
-  await runPromise;
+  await app.onStartup();
+  await app.onShutdown();
 
   assert.deepEqual(registrations, [authenticationHandler, principalApiAuthHandler, principalContributionHandler, reservedRoutesHandler, staticHandler]);
   assert.deepEqual(staticInitializations[0].sources.map((source) => source.prefix), ["/", "/_assets/comm/", "/desk/", "/mob/"]);
@@ -92,11 +72,13 @@ test("container resolves the host bootstrap without back namespace collision", a
   container.addNamespaceRoot("Alarisa_Comm_", path.resolve(process.cwd(), "node_modules/@flancer32/alarisa-comm/src"), ".mjs");
   container.addNamespaceRoot("TeqFw_Log_", path.resolve(process.cwd(), "node_modules/@teqfw/log/src"), ".mjs");
   container.addNamespaceRoot("TeqFw_Cfg_", path.resolve(process.cwd(), "node_modules/@teqfw/cfg/src"), ".mjs");
-  container.addNamespaceRoot("Fl32_Web_", path.resolve(process.cwd(), "node_modules/@flancer32/teq-web/src"), ".mjs");
+  container.addNamespaceRoot("TeqFw_Cli_", path.resolve(process.cwd(), "node_modules/@teqfw/cli/src"), ".mjs");
+  container.addNamespaceRoot("TeqFw_Web_", path.resolve(process.cwd(), "node_modules/@teqfw/web/src"), ".mjs");
   container.addNamespaceRoot("node:", path.resolve(process.cwd(), "node_modules"), ".mjs");
 
   const app = await container.get("Alarisa_Bootstrap$");
 
   assert.ok(app instanceof Bootstrap);
-  assert.equal(typeof app.run, "function");
+  assert.equal(typeof app.onStartup, "function");
+  assert.equal(typeof app.onShutdown, "function");
 });

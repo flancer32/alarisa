@@ -1,10 +1,18 @@
 import assert from "node:assert/strict";
 import {spawn} from "node:child_process";
 import {once} from "node:events";
+import fs from "node:fs/promises";
 import net from "node:net";
 import path from "node:path";
 import process from "node:process";
 import test from "node:test";
+
+const cliEnv = function () {
+  const env = {...process.env};
+  delete env.pm_exec_path;
+  delete env.NODE_TEST_CONTEXT;
+  return env;
+};
 
 async function freePort() {
   const server = net.createServer();
@@ -18,30 +26,25 @@ async function freePort() {
 test("HTTP composition exposes auth bootstrap and protects Principal API operations", async () => {
   const projectRoot = path.resolve(process.cwd());
   const port = await freePort();
-  const child = spawn(process.execPath, [path.join(projectRoot, "bin/cli.mjs"), `--port=${port}`], {
+  const executable = await fs.realpath(path.join(projectRoot, "node_modules/.bin/teq"));
+  const child = spawn(executable, ["alarisa:start", `--port=${port}`], {
     cwd: projectRoot,
-    stdio: ["ignore", "pipe", "pipe"],
-    env: {...process.env},
+    stdio: ["ignore", "inherit", "inherit"],
+    env: cliEnv(),
   });
-  let output = "";
-  child.stdout.on("data", (chunk) => { output += chunk.toString(); });
-  child.stderr.on("data", (chunk) => { output += chunk.toString(); });
   const exitPromise = once(child, "exit");
 
   try {
-    const started = new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error(`Timed out waiting for authentication HTTP test server\n${output}`)), 10_000);
-      const inspect = () => {
-        if (!output.includes("Starting server in HTTP/1 mode on ")) return;
-        clearTimeout(timer);
-        resolve();
-      };
-      child.stdout.on("data", inspect);
-      child.stderr.on("data", inspect);
-    });
-    await started;
-
-    const session = await fetch(`http://127.0.0.1:${port}/api/v1/auth/session`);
+    let session;
+    const deadline = Date.now() + 10_000;
+    while (!session && Date.now() < deadline) {
+      try {
+        session = await fetch(`http://127.0.0.1:${port}/api/v1/auth/session`);
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, 25));
+      }
+    }
+    if (!session) throw new Error("Timed out waiting for authentication HTTP test server");
     assert.equal(session.status, 200);
     assert.deepEqual(await session.json(), {authenticated: false});
 
@@ -63,7 +66,7 @@ test("HTTP composition exposes auth bootstrap and protects Principal API operati
     });
     assert.equal(options.status, 409);
   } finally {
-    child.kill("SIGTERM");
+    child.kill("SIGKILL");
     await exitPromise;
   }
 });

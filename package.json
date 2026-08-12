@@ -23,7 +23,6 @@
   "types": "types.d.ts",
   "files": [
     ".env.example",
-    "bin",
     "src",
     "web",
     "types.d.ts",
@@ -34,16 +33,73 @@
     "node": ">=20"
   },
   "teqfw": {
-    "namespaces": [
-      {
-        "prefix": "Alarisa_",
-        "path": "./src",
-        "ext": ".mjs"
+    "fw": {
+      "di": {
+        "namespaces": [
+          {
+            "prefix": "Alarisa_",
+            "path": "./src",
+            "ext": ".mjs"
+          }
+        ]
+      },
+      "cli": {
+        "plugin": "Alarisa_Bootstrap$",
+        "command": {
+          "default": "alarisa:start"
+        },
+        "commands": [
+          {
+            "id": "alarisa:start",
+            "summary": "Start the Alarisa server.",
+            "options": [
+              {
+                "name": "port",
+                "kind": "number",
+                "description": "Override the HTTP port."
+              },
+              {
+                "name": "type",
+                "kind": "string",
+                "description": "Override the server type."
+              }
+            ],
+            "component": "Alarisa_Cli_Command_Start$"
+          },
+          {
+            "id": "auth:enroll",
+            "summary": "Issue a Principal device enrollment URL.",
+            "options": [
+              {
+                "name": "surface",
+                "kind": "string",
+                "defaultValue": "mob",
+                "description": "Target surface: desk or mob."
+              },
+              {
+                "name": "label",
+                "kind": "string",
+                "description": "Human-readable device label."
+              },
+              {
+                "name": "ttl-minutes",
+                "kind": "number",
+                "description": "Enrollment lifetime in minutes."
+              },
+              {
+                "name": "data-root",
+                "kind": "string",
+                "description": "Override the runtime data root."
+              }
+            ],
+            "component": "Alarisa_Cli_Command_Enroll$"
+          }
+        ]
       }
-    ]
+    }
   },
   "scripts": {
-    "start": "node ./bin/cli.mjs",
+    "start": "teq alarisa:start",
     "test:unit": "find test/unit -name '*.test.mjs' -print0 | xargs -0 node --test",
     "test": "npm run test:unit"
   },
@@ -52,8 +108,10 @@
     "@flancer32/alarisa-comm": "github:flancer32/alarisa-comm#main",
     "@flancer32/alarisa-desk": "github:flancer32/alarisa-desk#main",
     "@flancer32/alarisa-mob": "github:flancer32/alarisa-mob#main",
-    "@flancer32/teq-web": "github:flancer32/teq-web#main",
-    "@teqfw/log": ">=0.1.0"
+    "@teqfw/cfg": "^2.0.0",
+    "@teqfw/cli": "^2.1.0",
+    "@teqfw/log": "^2.0.0",
+    "@teqfw/web": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",

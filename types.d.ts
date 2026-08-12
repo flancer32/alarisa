@@ -5,7 +5,13 @@ declare global {
   type Alarisa_Config_Runtime__Params = {projectRoot?: string, host?: string, httpPort?: number, serverType?: string, dataRoot?: string, authOrigin?: string, authRpId?: string, authRpName?: string};
   type Alarisa_Bootstrap = typeof import("./src/Bootstrap.mjs").default;
   type Alarisa_Bootstrap$ = InstanceType<Alarisa_Bootstrap>;
-  type Alarisa_Bootstrap__Run_Params = {projectRoot: string, cliArgs?: string[]};
+  type Alarisa_Cli_Command_Enroll = typeof import("./src/Cli/Command/Enroll.mjs").default;
+  type Alarisa_Cli_Command_Enroll$ = InstanceType<Alarisa_Cli_Command_Enroll>;
+  type Alarisa_Cli_Command_Enroll_Context = {options: Alarisa_Cli_Command_Enroll_Options, signal: AbortSignal};
+  type Alarisa_Cli_Command_Enroll_Options = {surface?: string, label?: string, "ttl-minutes"?: number, "data-root"?: string};
+  type Alarisa_Cli_Command_Start = typeof import("./src/Cli/Command/Start.mjs").default;
+  type Alarisa_Cli_Command_Start$ = InstanceType<Alarisa_Cli_Command_Start>;
+  type Alarisa_Cli_Command_Start_Context = {options: {port?: number, type?: string}, signal: AbortSignal};
   type Alarisa_Bootstrap__Static_Source_Definition = {root: string, prefix: string, allow: {".": string[]}, defaults: string[]};
   type Alarisa_Host_Handler_ReservedRoutes = typeof import("./src/Host/Handler/ReservedRoutes.mjs").default;
   type Alarisa_Host_Handler_ReservedRoutes$ = InstanceType<Alarisa_Host_Handler_ReservedRoutes>;
