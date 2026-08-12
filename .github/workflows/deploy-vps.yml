@@ -94,5 +94,5 @@ jobs:
           git pull --ff-only
           npm ci
           sudo -n systemctl start "$service_name"
-          sudo -n systemctl is-active --quiet "$service_name"
+          sudo -n systemctl status "$service_name" >/dev/null
           REMOTE_SCRIPT
