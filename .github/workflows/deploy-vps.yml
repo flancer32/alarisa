@@ -1,0 +1,95 @@
+name: Deploy to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: GitHub Environment deployment profile
+        required: true
+        type: environment
+      service:
+        description: systemd service to restart; defaults to the VPS_SERVICE environment variable
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      environment:
+        description: GitHub Environment deployment profile
+        required: true
+        type: string
+      service:
+        description: systemd service to restart; defaults to the VPS_SERVICE environment variable
+        required: false
+        type: string
+
+permissions: {}
+
+jobs:
+  deploy:
+    name: Update application and restart service
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+    env:
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      VPS_USER: ${{ vars.VPS_USER }}
+      VPS_SERVICE: ${{ inputs.service || vars.VPS_SERVICE }}
+      VPS_SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+      VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+    steps:
+      - name: Validate deployment settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          for variable in VPS_HOST VPS_USER VPS_SERVICE VPS_SSH_PRIVATE_KEY VPS_SSH_KNOWN_HOSTS; do
+            if [[ -z "${!variable}" ]]; then
+              echo "Missing required deployment setting: ${variable}" >&2
+              exit 1
+            fi
+          done
+          if [[ ! "$VPS_SERVICE" =~ ^[A-Za-z0-9@_.-]+\.service$ ]]; then
+            echo 'VPS_SERVICE must be a systemd unit name ending in .service.' >&2
+            exit 1
+          fi
+
+      - name: Configure SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$VPS_SSH_PRIVATE_KEY" > "$HOME/.ssh/deploy_key"
+          chmod 600 "$HOME/.ssh/deploy_key"
+          printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Update application
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh \
+            -i "$HOME/.ssh/deploy_key" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            "$VPS_USER@$VPS_HOST" \
+            bash -s -- "$VPS_SERVICE" <<'REMOTE_SCRIPT'
+          set -euo pipefail
+
+          service_name="$1"
+          case "$service_name" in
+            *[!A-Za-z0-9@_.-]* | '')
+              echo "Invalid service name." >&2
+              exit 1
+              ;;
+          esac
+
+          cd "$HOME/alarisa/app"
+          sudo systemctl stop "$service_name"
+          git fetch --prune origin
+          git pull --ff-only
+          npm ci
+          sudo systemctl start "$service_name"
+          sudo systemctl is-active --quiet "$service_name"
+          REMOTE_SCRIPT
