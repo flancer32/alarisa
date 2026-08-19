@@ -33,6 +33,7 @@ test("composes handlers and four collision-free static sources", async () => {
   const principalContributionHandler = {name: "principal"};
   const authenticationHandler = {name: "authentication"};
   const principalApiAuthHandler = {name: "api-auth"};
+  const worldPictureHandler = {name: "world-picture", async handle() {}, getRegistrationInfo() { return {after: [], before: [], name: "world-picture", stage: "PROCESS"}; }};
   const reservedRoutesHandler = {name: "reserved"};
   const authService = {};
   const databaseCalls = [];
@@ -56,6 +57,7 @@ test("composes handlers and four collision-free static sources", async () => {
     authenticationHandler,
     principalApiAuthHandler,
     principalContributionHandler,
+    worldPictureHandler,
     reservedRoutesHandler,
     staticHandler,
     sourceFactory,
@@ -64,7 +66,7 @@ test("composes handlers and four collision-free static sources", async () => {
   await app.onStartup();
   await app.onShutdown();
 
-  assert.deepEqual(registrations, [authenticationHandler, principalApiAuthHandler, principalContributionHandler, reservedRoutesHandler, staticHandler]);
+  assert.deepEqual(registrations, [authenticationHandler, principalApiAuthHandler, principalContributionHandler, worldPictureHandler, reservedRoutesHandler, staticHandler]);
   assert.deepEqual(databaseCalls, [{operation: "start", projectRoot: process.cwd()}, {operation: "stop"}]);
   assert.deepEqual(staticInitializations[0].sources.map((source) => source.prefix), ["/", "/_assets/comm/", "/desk/", "/mob/"]);
   assert.match(staticInitializations[0].sources[1].root, /node_modules\/\@flancer32\/alarisa-comm\/web$/);

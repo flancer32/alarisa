@@ -16,7 +16,7 @@ test("database composition creates an absent schema and disconnects", async () =
   const compilation = {physical: {tables: [{name: "alarisa_case"}]}};
   const database = new Database({
     fs: {async mkdir(directory, options) { calls.push({operation: "mkdir", directory, options}); }},
-    path, dbConfig: {get: () => ({})}, connection,
+    path, dbConfig: {get: () => ({connection: {filename: "var/state.sqlite"}})}, connection,
     demLoad: {exec: async () => ({compilation})},
     schema: {
       setCompilation({compilation: value}) { assert.equal(value, compilation); },
@@ -24,10 +24,10 @@ test("database composition creates an absent schema and disconnects", async () =
     },
   });
   const projectRoot = path.join(os.tmpdir(), "alarisa-db-host-test");
-  const result = await database.start(projectRoot);
+  const result = await database.start(projectRoot, path.join(os.tmpdir(), "alarisa-db-host-test-state"));
   await database.stop();
   assert.equal(result.status, "created");
-  assert.equal(result.filename, path.join(projectRoot, "var/state.sqlite"));
+  assert.equal(result.filename, path.join(os.tmpdir(), "alarisa-db-host-test-state", "state.sqlite"));
   assert.equal(calls.at(-1).operation, "disconnect");
 });
 

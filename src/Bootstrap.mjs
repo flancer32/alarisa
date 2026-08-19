@@ -18,11 +18,12 @@ export default class Bootstrap {
    * @param {Alarisa_Comm_Back_Handler_Authentication} deps.authenticationHandler
    * @param {Alarisa_Host_Handler_PrincipalApiAuth} deps.principalApiAuthHandler
    * @param {Alarisa_Comm_Back_Handler_PrincipalContribution} deps.principalContributionHandler
+   * @param {Alarisa_Host_WorldPicture_Handler} deps.worldPictureHandler
    * @param {Alarisa_Host_Handler_ReservedRoutes} deps.reservedRoutesHandler
    * @param {TeqFw_Web_Back_Handler_Static} deps.staticHandler
    * @param {TeqFw_Web_Back_Dto_Source__Factory} deps.sourceFactory
    */
-  constructor({module, path, logger, cliConfig, runtimeFactory, authService, database, pipelineEngine, authenticationHandler, principalApiAuthHandler, principalContributionHandler, reservedRoutesHandler, staticHandler, sourceFactory}) {
+  constructor({module, path, logger, cliConfig, runtimeFactory, authService, database, pipelineEngine, authenticationHandler, principalApiAuthHandler, principalContributionHandler, worldPictureHandler, reservedRoutesHandler, staticHandler, sourceFactory}) {
     const log = logger.forSource("Alarisa_Bootstrap");
     const require = module.createRequire(import.meta.url);
 
@@ -94,7 +95,7 @@ export default class Bootstrap {
     this.onStartup = async function () {
       const projectRoot = cliConfig.applicationRoot;
       const config = initializeRuntime(projectRoot, [...cliConfig.argv]);
-      await database.start(projectRoot);
+      await database.start(projectRoot, config.dataRoot);
       const sources = createStaticSources([
         {root: path.join(projectRoot, "web"), prefix: "/", allow: {".": ["."]}, defaults: ["index.html"]},
         {root: packageWebRoot("@flancer32/alarisa-comm"), prefix: "/_assets/comm/", allow: {".": ["."]}, defaults: []},
@@ -104,6 +105,7 @@ export default class Bootstrap {
       pipelineEngine.addHandler(authenticationHandler);
       pipelineEngine.addHandler(principalApiAuthHandler);
       pipelineEngine.addHandler(principalContributionHandler);
+      pipelineEngine.addHandler(worldPictureHandler);
       pipelineEngine.addHandler(reservedRoutesHandler);
       pipelineEngine.addHandler(staticHandler);
       await staticHandler.init({sources});
@@ -132,6 +134,7 @@ export const __deps__ = Object.freeze({
     authenticationHandler: "Alarisa_Comm_Back_Handler_Authentication$",
     principalApiAuthHandler: "Alarisa_Host_Handler_PrincipalApiAuth$",
     principalContributionHandler: "Alarisa_Comm_Back_Handler_PrincipalContribution$",
+    worldPictureHandler: "Alarisa_Comm_Back_Handler_WorldPicture$",
     reservedRoutesHandler: "Alarisa_Host_Handler_ReservedRoutes$",
     staticHandler: "TeqFw_Web_Back_Handler_Static$",
     sourceFactory: "TeqFw_Web_Back_Dto_Source__Factory$",

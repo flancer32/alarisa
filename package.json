@@ -63,6 +63,11 @@
                 "name": "type",
                 "kind": "string",
                 "description": "Override the server type."
+              },
+              {
+                "name": "data-root",
+                "kind": "string",
+                "description": "Override the runtime data root."
               }
             ],
             "component": "Alarisa_Cli_Command_Start$"

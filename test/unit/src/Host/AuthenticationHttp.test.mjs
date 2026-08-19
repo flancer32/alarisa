@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import {spawn} from "node:child_process";
 import {once} from "node:events";
 import fs from "node:fs/promises";
+import os from "node:os";
 import net from "node:net";
 import path from "node:path";
 import process from "node:process";
@@ -26,11 +27,12 @@ async function freePort() {
 test("HTTP composition exposes auth bootstrap and protects Principal API operations", async () => {
   const projectRoot = path.resolve(process.cwd());
   const port = await freePort();
+  const dataRoot = await fs.mkdtemp(path.join(os.tmpdir(), "alarisa-auth-http-"));
   const executable = await fs.realpath(path.join(projectRoot, "node_modules/.bin/teq"));
-  const child = spawn(executable, ["alarisa:start", `--port=${port}`], {
+  const child = spawn(executable, ["alarisa:start", `--port=${port}`, `--data-root=${dataRoot}`], {
     cwd: projectRoot,
     stdio: ["ignore", "inherit", "inherit"],
-    env: cliEnv(),
+    env: {...cliEnv(), ALARISA__DATA_ROOT: dataRoot},
   });
   const exitPromise = once(child, "exit");
 
@@ -68,5 +70,6 @@ test("HTTP composition exposes auth bootstrap and protects Principal API operati
   } finally {
     child.kill("SIGKILL");
     await exitPromise;
+    await fs.rm(dataRoot, {recursive: true, force: true});
   }
 });

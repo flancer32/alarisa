@@ -51,3 +51,14 @@ test("leaves static resources and authentication endpoints outside the guard", a
     assert.equal(context.completed, false);
   }
 });
+
+test("rejects an unauthenticated World Picture request before its handler runs", async () => {
+  const guard = new PrincipalApiAuth({dtoInfoFactory, STAGE, contract, auth: {resolveSession: async () => { throw new Error("invalid"); }}});
+  let worldPictureCalls = 0;
+  const worldPictureHandler = {handle: async () => { worldPictureCalls += 1; }};
+  const context = {request: {url: "/api/v1/world-picture/tree", headers: {}}, response: response(), completed: false};
+  await guard.handle(context);
+  if (!context.completed) await worldPictureHandler.handle(context);
+  assert.equal(context.response.status, 401);
+  assert.equal(worldPictureCalls, 0);
+});

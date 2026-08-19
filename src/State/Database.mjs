@@ -14,14 +14,18 @@ export default class Alarisa_State_Database {
   constructor({fs, path, dbConfig, connection, demLoad, schema}) {
     let started = false;
 
-    /** @param {string} projectRoot @returns {Promise<object>} */
-    this.start = async function (projectRoot) {
+    /** @param {string} projectRoot @param {string|undefined} dataRoot @returns {Promise<object>} */
+    this.start = async function (projectRoot, dataRoot) {
       if (started) return {status: "already-started"};
       const source = dbConfig.get();
       const client = source.client ?? "sqlite3";
       if (client !== "sqlite3") throw new Error(`The initial Alarisa state store requires sqlite3, received '${client}'.`);
-      const configured = source.connection?.filename ?? "var/state.sqlite";
-      const filename = path.isAbsolute(configured) ? configured : path.resolve(projectRoot, configured);
+      const configured = source.connection?.filename;
+      const filename = (dataRoot !== undefined && (configured === undefined || configured === "var/state.sqlite"))
+        ? path.join(dataRoot, "state.sqlite")
+        : configured === undefined
+          ? path.resolve(projectRoot, "var/state.sqlite")
+          : path.isAbsolute(configured) ? configured : path.resolve(projectRoot, configured);
       await fs.mkdir(path.dirname(filename), {recursive: true, mode: 0o700});
       await connection.init({...source, client, connection: {...source.connection, filename}, useNullAsDefault: source.useNullAsDefault ?? true});
       connection.setSchemaConfig({prefix: "alarisa"});

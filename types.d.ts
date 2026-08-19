@@ -11,7 +11,8 @@ declare global {
   type Alarisa_Cli_Command_Enroll_Options = {surface?: string, label?: string, "ttl-minutes"?: number, "data-root"?: string};
   type Alarisa_Cli_Command_Start = typeof import("./src/Cli/Command/Start.mjs").default;
   type Alarisa_Cli_Command_Start$ = InstanceType<Alarisa_Cli_Command_Start>;
-  type Alarisa_Cli_Command_Start_Context = {options: {port?: number, type?: string}, signal: AbortSignal};
+  type Alarisa_Host_WorldPicture_Handler = Alarisa_Comm_Back_Handler_WorldPicture$;
+  type Alarisa_Cli_Command_Start_Context = {options: {port?: number, type?: string, "data-root"?: string}, signal: AbortSignal};
   type Alarisa_Bootstrap__Static_Source_Definition = {root: string, prefix: string, allow: {".": string[]}, defaults: string[]};
   type Alarisa_Host_Handler_ReservedRoutes = typeof import("./src/Host/Handler/ReservedRoutes.mjs").default;
   type Alarisa_Host_Handler_ReservedRoutes$ = InstanceType<Alarisa_Host_Handler_ReservedRoutes>;
