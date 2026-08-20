@@ -4,43 +4,51 @@ import path from "node:path";
 import {test} from "node:test";
 import Database from "../../../../src/State/Database.mjs";
 
-test("database composition creates an absent schema and disconnects", async () => {
+test("database composition initializes the PostgreSQL store, creates an absent schema, and disconnects", async () => {
   const calls = [];
   const connection = {
     async init(config) { calls.push({operation: "init", config}); },
     setSchemaConfig(config) { calls.push({operation: "schema-config", config}); },
-    getDialectAdapter() { return {id: "sqlite"}; },
+    getDialectAdapter() { return {id: "postgresql"}; },
     getSchemaBuilder() { return {async hasTable() { return false; }}; },
     async disconnect() { calls.push({operation: "disconnect"}); },
   };
   const compilation = {physical: {tables: [{name: "alarisa_case"}]}};
   const database = new Database({
-    fs: {async mkdir(directory, options) { calls.push({operation: "mkdir", directory, options}); }},
-    path, dbConfig: {get: () => ({connection: {filename: "var/state.sqlite"}})}, connection,
+    dbConfig: {get: () => ({client: "pg", connection: {database: "alarisa", host: "127.0.0.1", user: "alarisa"}})}, connection,
     demLoad: {exec: async () => ({compilation})},
     schema: {
       setCompilation({compilation: value}) { assert.equal(value, compilation); },
       async createAllTables({conn}) { assert.equal(conn, connection); return {status: "complete"}; },
     },
   });
-  const projectRoot = path.join(os.tmpdir(), "alarisa-db-host-test");
-  const result = await database.start(projectRoot, path.join(os.tmpdir(), "alarisa-db-host-test-state"));
+  const result = await database.start(path.join(os.tmpdir(), "alarisa-db-host-test"));
   await database.stop();
   assert.equal(result.status, "created");
-  assert.equal(result.filename, path.join(os.tmpdir(), "alarisa-db-host-test-state", "state.sqlite"));
+  assert.deepEqual(calls[0], {operation: "init", config: {client: "pg", connection: {database: "alarisa", host: "127.0.0.1", user: "alarisa"}}});
   assert.equal(calls.at(-1).operation, "disconnect");
 });
 
-test("database composition rejects a partial schema", async () => {
+test("database composition rejects a partial PostgreSQL schema", async () => {
   const connection = {
     async init() {}, setSchemaConfig() {}, getDialectAdapter() { return {}; },
     getSchemaBuilder() { return {hasTable: async (table) => table === "alarisa_case"}; },
   };
   const compilation = {physical: {tables: [{name: "alarisa_case"}, {name: "alarisa_case_relation"}]}};
   const database = new Database({
-    fs: {mkdir: async () => {}}, path, dbConfig: {get: () => ({})}, connection,
+    dbConfig: {get: () => ({client: "pg"})}, connection,
     demLoad: {exec: async () => ({compilation})},
     schema: {setCompilation() {}, createAllTables: async () => assert.fail("must not create over a partial schema")},
   });
   await assert.rejects(database.start(process.cwd()), /Partial Alarisa database schema/);
+});
+
+test("database composition rejects a non-PostgreSQL client", async () => {
+  const database = new Database({
+    dbConfig: {get: () => ({client: "sqlite3"})},
+    connection: {init: async () => assert.fail("must not initialize")},
+    demLoad: {exec: async () => assert.fail("must not load schema")},
+    schema: {},
+  });
+  await assert.rejects(database.start(process.cwd()), /requires pg, received 'sqlite3'/);
 });

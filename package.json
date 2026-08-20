@@ -120,13 +120,11 @@
     "@teqfw/db": "^2.1.1",
     "@teqfw/log": "^2.0.0",
     "@teqfw/web": "^2.0.0",
-    "sqlite3": "^6.0.1"
+    "pg": "^8.16.3"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
     "typescript": "^7.0.2"
   },
-  "allowScripts": {
-    "sqlite3@6.0.1": true
-  }
+  "allowScripts": {}
 }

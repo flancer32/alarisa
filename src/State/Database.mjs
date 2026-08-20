@@ -1,33 +1,27 @@
 // @ts-check
 
-/** @namespace Alarisa_State_Database */
+/**
+ * @namespace Alarisa_State_Database
+ * @description PostgreSQL State database lifecycle and schema composition.
+ */
 export default class Alarisa_State_Database {
   /**
    * @param {object} deps
-   * @param {Alarisa_Node_FsPromises} deps.fs
-   * @param {Alarisa_Node_Path} deps.path
    * @param {TeqFw_Db_Back_Config} deps.dbConfig
    * @param {TeqFw_Db_Back_RDb_IConnect} deps.connection
    * @param {TeqFw_Db_Back_Dem_Load} deps.demLoad
    * @param {TeqFw_Db_Back_RDb_Schema} deps.schema
    */
-  constructor({fs, path, dbConfig, connection, demLoad, schema}) {
+  constructor({dbConfig, connection, demLoad, schema}) {
     let started = false;
 
-    /** @param {string} projectRoot @param {string|undefined} dataRoot @returns {Promise<object>} */
-    this.start = async function (projectRoot, dataRoot) {
+    /** @param {string} projectRoot @returns {Promise<object>} */
+    this.start = async function (projectRoot) {
       if (started) return {status: "already-started"};
       const source = dbConfig.get();
-      const client = source.client ?? "sqlite3";
-      if (client !== "sqlite3") throw new Error(`The initial Alarisa state store requires sqlite3, received '${client}'.`);
-      const configured = source.connection?.filename;
-      const filename = (dataRoot !== undefined && (configured === undefined || configured === "var/state.sqlite"))
-        ? path.join(dataRoot, "state.sqlite")
-        : configured === undefined
-          ? path.resolve(projectRoot, "var/state.sqlite")
-          : path.isAbsolute(configured) ? configured : path.resolve(projectRoot, configured);
-      await fs.mkdir(path.dirname(filename), {recursive: true, mode: 0o700});
-      await connection.init({...source, client, connection: {...source.connection, filename}, useNullAsDefault: source.useNullAsDefault ?? true});
+      const client = source.client ?? "pg";
+      if (client !== "pg") throw new Error(`The Alarisa state store requires pg, received '${client}'.`);
+      await connection.init({...source, client});
       connection.setSchemaConfig({prefix: "alarisa"});
       const adapter = connection.getDialectAdapter();
       const loaded = await demLoad.exec({path: projectRoot, adapter});
@@ -42,19 +36,21 @@ export default class Alarisa_State_Database {
         throw new Error(`Partial Alarisa database schema detected (${present.length}/${expected.length} tables); automatic repair is forbidden.`);
       }
       started = true;
-      return {filename, status: present.length === 0 ? "created" : "existing", tables: expected};
+      return {status: present.length === 0 ? "created" : "existing", tables: expected};
     };
 
+    /** @returns {Promise<void>} */
     this.stop = async function () {
       if (!started) return;
       started = false;
       await connection.disconnect();
     };
+    /** @returns {TeqFw_Db_Back_RDb_IConnect} */
     this.getConnection = () => connection;
   }
 }
 
 export const __deps__ = Object.freeze({default: Object.freeze({
-  fs: "node:fs/promises", path: "node:path", dbConfig: "TeqFw_Db_Back_Config$",
+  dbConfig: "TeqFw_Db_Back_Config$",
   connection: "TeqFw_Db_Back_RDb_Connect$", demLoad: "TeqFw_Db_Back_Dem_Load$", schema: "TeqFw_Db_Back_RDb_Schema$",
 })});
