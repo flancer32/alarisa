@@ -99,6 +99,12 @@
               }
             ],
             "component": "Alarisa_Cli_Command_Enroll$"
+          },
+          {
+            "id": "state:import-world-map",
+            "summary": "Import the bundled World Map snapshot into durable State.",
+            "options": [],
+            "component": "Alarisa_Cli_Command_ImportWorldMap$"
           }
         ]
       }
@@ -120,7 +126,8 @@
     "@teqfw/db": "^2.1.1",
     "@teqfw/log": "^2.0.0",
     "@teqfw/web": "^2.0.0",
-    "pg": "^8.16.3"
+    "pg": "^8.16.3",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
