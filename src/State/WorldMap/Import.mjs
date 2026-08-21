@@ -45,6 +45,18 @@ export function validate(value) {
   return value;
 }
 
+/** @param {object[]} records @returns {object[]} */
+export function normalize(records) {
+  return records.map((record) => ({
+    ...record,
+    components: record.components.map((component) => ({...component, type: component.type.toLowerCase()})),
+    relations: (record.relations ?? []).map((relation, index, relations) => ({
+      ...relation,
+      type: relation.type === "part-of" && relations.findIndex((candidate) => candidate.type === "part-of") === index ? "case-parent" : relation.type,
+    })),
+  }));
+}
+
 /**
  * @param {object} deps
  * @param {TeqFw_Db_Back_RDb_IConnect} deps.connection
@@ -60,7 +72,7 @@ export default class Import {
      * @returns {Promise<object>}
      */
     this.execute = async function (source) {
-      const records = validate(source);
+      const records = normalize(validate(source));
       return await connection.getClient().transaction(async (trx) => {
         await trx.raw("SELECT pg_advisory_xact_lock(?)", [20260819]);
         const markerRows = await trx("alarisa_object_extension").where({namespace: EXTENSION_NAMESPACE, version: EXTENSION_VERSION}).whereRaw("data->>'source' = ?", [SOURCE]).select("data");
