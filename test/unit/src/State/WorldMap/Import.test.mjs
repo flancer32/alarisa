@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {validate} from "../../../../../src/State/WorldMap/Import.mjs";
+import {tableName, validate} from "../../../../../src/State/WorldMap/Import.mjs";
+
+test("World Map resolves current State entity paths through the transaction", () => {
+  const entities = [];
+  const trx = {getTableName(meta) { entities.push(meta.getEntityName()); return "resolved_table"; }};
+  assert.equal(tableName(trx, "object/extension"), "resolved_table");
+  assert.deepEqual(entities, ["@flancer32/alarisa-back-state/alarisa/state/object/extension"]);
+});
 
 test("World Map validation accepts components and relations with known references", () => {
   const map = [{ref: "one", components: [{type: "Case", properties: {title: "One"}}], relations: [{type: "part-of", target: "two"}]}, {ref: "two", components: [{type: "Case"}]}];

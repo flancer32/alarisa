@@ -22,9 +22,9 @@ export default class Alarisa_State_Database {
       const client = source.client ?? "pg";
       if (client !== "pg") throw new Error(`The Alarisa state store requires pg, received '${client}'.`);
       await connection.init({...source, client});
-      connection.setSchemaConfig({prefix: "alarisa"});
       const adapter = connection.getDialectAdapter();
       const loaded = await demLoad.exec({path: projectRoot, adapter});
+      connection.setSchemaConfig({prefix: loaded.compilation.physical.namespace});
       schema.setCompilation({compilation: loaded.compilation});
       const expected = loaded.compilation.physical.tables.map((table) => table.name);
       const present = [];

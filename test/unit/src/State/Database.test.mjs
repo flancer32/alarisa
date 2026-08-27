@@ -13,7 +13,7 @@ test("database composition initializes the PostgreSQL store, creates an absent s
     getSchemaBuilder() { return {async hasTable() { return false; }}; },
     async disconnect() { calls.push({operation: "disconnect"}); },
   };
-  const compilation = {physical: {tables: [{name: "alarisa_case"}]}};
+  const compilation = {physical: {namespace: "", tables: [{name: "alarisa_state_object"}]}};
   const database = new Database({
     dbConfig: {get: () => ({client: "pg", connection: {database: "alarisa", host: "127.0.0.1", user: "alarisa"}})}, connection,
     demLoad: {exec: async () => ({compilation})},
@@ -26,15 +26,16 @@ test("database composition initializes the PostgreSQL store, creates an absent s
   await database.stop();
   assert.equal(result.status, "created");
   assert.deepEqual(calls[0], {operation: "init", config: {client: "pg", connection: {database: "alarisa", host: "127.0.0.1", user: "alarisa"}}});
+  assert.deepEqual(calls[1], {operation: "schema-config", config: {prefix: ""}});
   assert.equal(calls.at(-1).operation, "disconnect");
 });
 
 test("database composition rejects a partial PostgreSQL schema", async () => {
   const connection = {
     async init() {}, setSchemaConfig() {}, getDialectAdapter() { return {}; },
-    getSchemaBuilder() { return {hasTable: async (table) => table === "alarisa_case"}; },
+    getSchemaBuilder() { return {hasTable: async (table) => table === "alarisa_state_object"}; },
   };
-  const compilation = {physical: {tables: [{name: "alarisa_case"}, {name: "alarisa_case_relation"}]}};
+  const compilation = {physical: {namespace: "", tables: [{name: "alarisa_state_object"}, {name: "alarisa_state_relation"}]}};
   const database = new Database({
     dbConfig: {get: () => ({client: "pg"})}, connection,
     demLoad: {exec: async () => ({compilation})},

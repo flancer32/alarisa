@@ -123,7 +123,7 @@
     "@flancer32/alarisa-mob": "github:flancer32/alarisa-mob#main",
     "@teqfw/cfg": "^2.0.0",
     "@teqfw/cli": "^2.1.0",
-    "@teqfw/db": "^2.1.1",
+    "@teqfw/db": "github:teqfw/db#main",
     "@teqfw/log": "^2.0.0",
     "@teqfw/web": "^2.0.0",
     "pg": "^8.16.3",

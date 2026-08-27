@@ -8,6 +8,16 @@
 const EXTENSION_NAMESPACE = "alarisa.world-map";
 const EXTENSION_VERSION = 1;
 const SOURCE = "ctx/agent/world-map-2026-08-19.yaml";
+const ENTITY_NAMESPACE = "@flancer32/alarisa-back-state/alarisa/state";
+
+/**
+ * @param {TeqFw_Db_Back_RDb_ITrans} trx
+ * @param {string} entity
+ * @returns {string}
+ */
+export function tableName(trx, entity) {
+  return trx.getTableName(/** @type {any} */ ({getEntityName: () => `${ENTITY_NAMESPACE}/${entity}`}));
+}
 
 /** @param {unknown} value @returns {object[]} */
 export function validate(value) {
@@ -73,47 +83,58 @@ export default class Import {
      */
     this.execute = async function (source) {
       const records = normalize(validate(source));
-      return await connection.getClient().transaction(async (trx) => {
+      const trx = await connection.startTransaction();
+      const knex = trx.getKnexTrx();
+      try {
         await trx.raw("SELECT pg_advisory_xact_lock(?)", [20260819]);
-        const markerRows = await trx("alarisa_object_extension").where({namespace: EXTENSION_NAMESPACE, version: EXTENSION_VERSION}).whereRaw("data->>'source' = ?", [SOURCE]).select("data");
+        const markerRows = await knex(tableName(trx, "object/extension")).where({namespace: EXTENSION_NAMESPACE, version: EXTENSION_VERSION}).whereRaw("data->>'source' = ?", [SOURCE]).select("data");
         const importedRefs = new Set(markerRows.map((row) => (typeof row.data === "string" ? JSON.parse(row.data) : row.data).ref));
         const relationCount = records.reduce((total, record) => total + (record.relations?.length ?? 0), 0);
         if (importedRefs.size > 0) {
           if (importedRefs.size !== records.length || records.some((record) => !importedRefs.has(record.ref))) throw new Error("A partial or different World Map snapshot is already present; automatic merge is forbidden.");
+          await trx.commit();
           return {status: "already-imported", objects: records.length, relations: relationCount};
         }
-        const componentTypeIds = await ensureTypes(trx, "alarisa_component_type", new Set(records.flatMap((record) => record.components.map((component) => component.type))), undefined);
-        const propertyTypeIds = await ensureTypes(trx, "alarisa_property_type", new Set(records.flatMap((record) => record.components.flatMap((component) => Object.keys(component.properties ?? {})))), "json");
-        const relationTypeIds = await ensureTypes(trx, "alarisa_relation_type", new Set(records.flatMap((record) => (record.relations ?? []).map((relation) => relation.type))), undefined);
+        const componentTypeIds = await ensureTypes(knex, tableName(trx, "component/type"), new Set(records.flatMap((record) => record.components.map((component) => component.type))), undefined);
+        const propertyTypeIds = await ensureTypes(knex, tableName(trx, "property/type"), new Set(records.flatMap((record) => record.components.flatMap((component) => Object.keys(component.properties ?? {})))), "json");
+        const relationTypeIds = await ensureTypes(knex, tableName(trx, "relation/type"), new Set(records.flatMap((record) => (record.relations ?? []).map((relation) => relation.type))), undefined);
         const objectIds = new Map();
         for (const record of records) {
-          const [created] = await trx("alarisa_object").insert({}).returning("id");
+          const [created] = await knex(tableName(trx, "object")).insert({}).returning("id");
           const objectId = Number(created.id ?? created);
           objectIds.set(record.ref, objectId);
-          await trx("alarisa_object_extension").insert({object_id: objectId, namespace: EXTENSION_NAMESPACE, version: EXTENSION_VERSION, data: JSON.stringify({source: SOURCE, ref: record.ref, record})});
+          await knex(tableName(trx, "object/extension")).insert({object_id: objectId, namespace: EXTENSION_NAMESPACE, version: EXTENSION_VERSION, data: JSON.stringify({source: SOURCE, ref: record.ref, record})});
           for (const component of record.components) {
-            const [createdComponent] = await trx("alarisa_component").insert({object_id: objectId, type_id: componentTypeIds.get(component.type)}).returning("id");
+            const [createdComponent] = await knex(tableName(trx, "component")).insert({object_id: objectId, type_id: componentTypeIds.get(component.type)}).returning("id");
             const componentId = Number(createdComponent.id ?? createdComponent);
-            for (const [code, value] of Object.entries(component.properties ?? {})) await trx("alarisa_property").insert({component_id: componentId, type_id: propertyTypeIds.get(code), value: JSON.stringify(value)});
+            for (const [code, value] of Object.entries(component.properties ?? {})) await knex(tableName(trx, "property")).insert({component_id: componentId, type_id: propertyTypeIds.get(code), value: JSON.stringify(value)});
           }
         }
-        for (const record of records) for (const relation of record.relations ?? []) await trx("alarisa_relation").insert({source_object_id: objectIds.get(record.ref), relation_type_id: relationTypeIds.get(relation.type), target_object_id: objectIds.get(relation.target)});
+        for (const record of records) for (const relation of record.relations ?? []) await knex(tableName(trx, "relation")).insert({source_object_id: objectIds.get(record.ref), relation_type_id: relationTypeIds.get(relation.type), target_object_id: objectIds.get(relation.target)});
+        await trx.commit();
         return {status: "imported", objects: records.length, relations: relationCount};
-      });
+      } catch (error) {
+        try {
+          await trx.rollback();
+        } catch (_) {
+          // The import failure is the contract-relevant error.
+        }
+        throw error;
+      }
     };
   }
 }
 
 /**
- * @param {any} trx
+ * @param {Knex} knex
  * @param {string} table
  * @param {Set<string>} codes
  * @param {string|undefined} valueType
  * @returns {Promise<object>}
  */
-async function ensureTypes(trx, table, codes, valueType) {
-  for (const code of codes) await trx(table).insert(valueType === undefined ? {code} : {code, value_type: valueType}).onConflict("code").ignore();
-  const rows = await trx(table).whereIn("code", [...codes]).select("id", "code");
+async function ensureTypes(knex, table, codes, valueType) {
+  for (const code of codes) await knex(table).insert(valueType === undefined ? {code} : {code, value_type: valueType}).onConflict("code").ignore();
+  const rows = await knex(table).whereIn("code", [...codes]).select("id", "code");
   if (rows.length !== codes.size) throw new Error(`Could not resolve all vocabulary entries in ${table}.`);
   return new Map(rows.map((row) => [row.code, Number(row.id)]));
 }
